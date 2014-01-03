@@ -2,6 +2,7 @@ package com.example.jvlaranamma;
 
 import java.util.Locale;
 
+import android.content.Context;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.ActionBar;
 import android.support.v4.app.Fragment;
@@ -18,6 +19,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.example.jvlaranamma.async.SongsLoaderAsyncTask;
+import com.example.jvlaranamma.fragments.songs;
+
+
 public class MainActivity extends ActionBarActivity implements ActionBar.TabListener {
 
     /**
@@ -29,6 +34,7 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
      * {@link android.support.v4.app.FragmentStatePagerAdapter}.
      */
     SectionsPagerAdapter mSectionsPagerAdapter;
+    private static Context context;
 
     /**
      * The {@link ViewPager} that will host the section contents.
@@ -73,8 +79,19 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
                             .setText(mSectionsPagerAdapter.getPageTitle(i))
                             .setTabListener(this));
         }
-    }
+        this.context = this;
 
+        new SongsLoaderAsyncTask(true).execute();
+    }
+    @Override
+    protected void onStart() {
+        super.onStart();
+       /* playerInterface = new PlayerInterfaceImpl(this);
+        EpisodePlayer.initalize(this,playerInterface);
+        ImageService.init(this);*/
+
+
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -111,6 +128,21 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
     public void onTabReselected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
     }
 
+    public void onGetContentFromBtnClick(View v){
+        /*WebContent wc = new WebContent(this);
+
+        wc.execute("http://www.ronn.se");*/
+
+
+        //WebContent wc = new WebContent();
+        //String returnHTML = wc.getWebContent("http://www.ronn.se");
+
+    }
+
+    public static Context getContext() {
+        return context;
+    }
+
     /**
      * A {@link FragmentPagerAdapter} that returns a fragment corresponding to
      * one of the sections/tabs/pages.
@@ -125,7 +157,22 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
         public Fragment getItem(int position) {
             // getItem is called to instantiate the fragment for the given page.
             // Return a PlaceholderFragment (defined as a static inner class below).
-            return PlaceholderFragment.newInstance(position + 1);
+            Fragment fragment=null;
+//        Log.d("VIVZ", "get Item is called "+i);
+            if(position==0)
+            {
+                fragment=new songs();
+            }
+            if(position==1)
+            {
+                fragment=new songs();
+            }
+            if(position==2)
+            {
+                fragment=new songs();
+            }
+            return fragment;
+           // return PlaceholderFragment.newInstance(position + 1);
         }
 
         @Override

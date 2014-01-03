@@ -1,0 +1,2736 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-EN">
+	<head>
+		<meta http-equiv="content-type"	content="text/html;charset=ISO-8859-1" />
+		<meta name="author" content="Anders 'Ernst' Gidlund" />
+		<title>&Auml;ntligen M&aring;ndag</title>
+		<link rel="stylesheet" type="text/css" href="css/style.css" />
+		<link rel="stylesheet" type="text/css" href="css/jplayer.css" />
+		<script type="text/javascript">
+			var _gaq = _gaq || [];
+			_gaq.push(['_setAccount', 'UA-22900613-1']);
+			_gaq.push(['_trackPageview']);
+			
+			(function() {
+				var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+				ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+				var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+			})();
+		</script>
+		<script src="js/jquery.js" type="text/javascript"></script>
+		<script src="js/jquery.jplayer.min.js" type="text/javascript"></script>
+		<script src="js/jquery.quicksearch.js" type="text/javascript"></script>
+		<script type="text/javascript">
+			//<![CDATA[
+				$(document).ready(function(){
+					var Playlist = function(instance, playlist, options) {
+						var self = this;
+						
+						this.instance = instance;
+						this.playlist = playlist;
+						this.options = options;
+						
+						this.current = 102;
+						
+						this.cssId = {
+							jPlayer: "jquery_jplayer_",
+							interface: "jp_interface_",
+							playlist: "jp_playlist_"
+						};
+						this.cssSelector = {};
+						
+						$.each(this.cssId, function(entity, id) {
+							self.cssSelector[entity] = "#" + id + self.instance;
+						});
+						
+						if(!this.options.cssSelectorAncestor) {
+							this.options.cssSelectorAncestor = this.cssSelector.interface;
+						}
+						
+						$(this.cssSelector.jPlayer).jPlayer(this.options);
+						
+						$(this.cssSelector.interface + " .jp-previous").click(function() {
+							self.playlistPrev();
+							$(this).blur();
+							return false;
+						});
+						
+						$(this.cssSelector.interface + " .jp-next").click(function() {
+							self.playlistNext();
+							$(this).blur();
+							return false;
+						});
+						
+						$(this.cssSelector.interface + " .jp-play").click(function() {
+						});
+					};
+					
+					Playlist.prototype = {
+						displayPlaylist: function() {
+							var self = this;
+							$(this.cssSelector.playlist + " ul").empty();
+							for (i=0; i < this.playlist.length; i++) {
+								var listItem = (i === this.playlist.length-1) ? "<li class='jp-playlist-last'>" : "<li>";
+								listItem += "<a href='#' id='" + this.cssId.playlist + this.instance + "_item_" + i +"' tabindex='1'>"+ this.playlist[i].name +"</a>";
+								
+								if(this.playlist[i].free) {
+									var first = true;
+									listItem += "<div class='jp-free-media'>(";
+									$.each(this.playlist[i], function(property,value) {
+										if($.jPlayer.prototype.format[property]) {
+											if(first) {
+												first = false;
+											}
+											else {
+												listItem += " | ";
+											}
+											listItem += "<a id='" + self.cssId.playlist + self.instance + "_item_" + i + "_" + property + "' href='" + value + "' tabindex='1'>" + property + "</a>";
+										}
+									});
+									listItem += ")</span>";
+								}
+								
+								listItem += "</li>";
+								
+								$(this.cssSelector.playlist + " ul").append(listItem);
+								$(this.cssSelector.playlist + "_item_" + i).data("index", i).click(function() {
+									var index = $(this).data("index");
+									if(self.current !== index) {
+										self.playlistChange(index);
+									}
+									else {
+										$(self.cssSelector.jPlayer).jPlayer("play");
+									}
+									$(this).blur();
+									return false;
+								});
+								
+								if(this.playlist[i].free) {
+									$.each(this.playlist[i], function(property,value) {
+										if($.jPlayer.prototype.format[property]) {
+											$(self.cssSelector.playlist + "_item_" + i + "_" + property).data("index", i).click(function() {
+												var index = $(this).data("index");
+												$(self.cssSelector.playlist + "_item_" + index).click();
+												$(this).blur();
+												return false;
+											});
+										}
+									});
+								}
+							}
+						},
+						playlistInit: function(autoplay) {
+							if(autoplay) {
+								this.playlistChange(this.current);
+								
+							}
+							else {
+								this.playlistConfig(this.current);
+							}
+						},
+						playlistConfig: function(index) {
+							$(this.cssSelector.playlist + "_item_" + this.current).removeClass("jp-playlist-current").parent().removeClass("jp-playlist-current");
+							$(this.cssSelector.playlist + "_item_" + index).addClass("jp-playlist-current").parent().addClass("jp-playlist-current");
+							this.current = index;
+							$(this.cssSelector.jPlayer).jPlayer("setMedia", this.playlist[this.current]);
+							
+						},
+						playlistChange: function(index) {
+							$("#playPic").attr('src', "img/void.png");
+							$("#dropdownBox").fadeOut(1000);
+							$("#playPic").hide();
+							$("#playTitle").hide();
+							$("#playAlbum").hide();
+							
+							this.playlistConfig(index);
+							$(this.cssSelector.jPlayer).jPlayer("play");
+							
+							$("#playPic").attr('src', this.playlist[this.current].poster).delay(1000).fadeIn("slow");
+							$("#playTitle").html(this.playlist[this.current].name).delay(1000).fadeIn("slow");
+							$("#playAlbum").html(this.playlist[this.current].album + "\u00A0(" + this.playlist[this.current].year + ")").delay(1000).fadeIn("slow");
+							
+							$("#dropdownBox").delay(1000).fadeIn(1000);
+						},
+						playlistNext: function() {
+							var index = (this.current + 1 < this.playlist.length) ? this.current + 1 : 0;
+							this.playlistChange(index);
+						},
+						playlistPrev: function() {
+							var index = (this.current - 1 >= 0) ? this.current - 1 : this.playlist.length - 1;
+							this.playlistChange(index);
+						}
+					};
+					
+					var mediaPlaylist = new Playlist("1", [
+						{
+							pos: "0",
+							id: "26",
+							name: "Indiankillen - discots skr&auml;ck",
+							album: "Skinkankare",
+							year: "1995",
+							mp3: "tracks/1995_skinkankare/mp3/07_javlaranamma_indiankillen_discots_skrack.mp3",
+							oga: "tracks/1995_skinkankare/ogg/07_javlaranamma_indiankillen_discots_skrack.ogg",
+							poster: "img/albums/thumb/javlaranamma_skinkankare.jpg"
+						},
+						{
+							pos: "1",
+							id: "31",
+							name: "L&aring;ng f&auml;rds natt mot dag",
+							album: "Skinkankare",
+							year: "1995",
+							mp3: "tracks/1995_skinkankare/mp3/12_javlaranamma_lang_fards_natt_mot_dag.mp3",
+							oga: "tracks/1995_skinkankare/ogg/12_javlaranamma_lang_fards_natt_mot_dag.ogg",
+							poster: "img/albums/thumb/javlaranamma_skinkankare.jpg"
+						},
+						{
+							pos: "2",
+							id: "62",
+							name: "En m&aring;lgestm&auml;stares uppg&aring;ng och fall",
+							album: "Max 1,5% sv&auml;ng",
+							year: "1998",
+							mp3: "tracks/1998_max_15_svang/mp3/03_javlaranamma_en_malgestmastares_uppgang_och_fall.mp3",
+							oga: "tracks/1998_max_15_svang/ogg/03_javlaranamma_en_malgestmastares_uppgang_och_fall.ogg",
+							poster: "img/albums/thumb/javlaranamma_max15svang.jpg"
+						},
+						{
+							pos: "3",
+							id: "40",
+							name: "&Aring; s&aring; en l&aring;t till (om vi hinner spela in den) (Hajbymania)",
+							album: "Hajbymania (&auml;nnu en julskiva)",
+							year: "1996",
+							mp3: "tracks/1996_hajbymania/mp3/05_javlaranamma_a_sa_en_lat_till.mp3",
+							oga: "tracks/1996_hajbymania/ogg/05_javlaranamma_a_sa_en_lat_till.ogg",
+							poster: "img/albums/thumb/javlaranamma_hajbymania.jpg"
+						},
+						{
+							pos: "4",
+							id: "67",
+							name: "De var v&auml;l trevligt",
+							album: "Fin i kanten",
+							year: "1999",
+							mp3: "tracks/1999_fin_i_kanten/mp3/03_javlaranamma_de_var_val_trevligt.mp3",
+							oga: "tracks/1999_fin_i_kanten/ogg/03_javlaranamma_de_var_val_trevligt.ogg",
+							poster: "img/albums/thumb/javlaranamma_finikanten.jpg"
+						},
+						{
+							pos: "5",
+							id: "38",
+							name: "A Christer carol",
+							album: "Hajbymania (&auml;nnu en julskiva)",
+							year: "1996",
+							mp3: "tracks/1996_hajbymania/mp3/03_javlaranamma_a_christer_carol.mp3",
+							oga: "tracks/1996_hajbymania/ogg/03_javlaranamma_a_christer_carol.ogg",
+							poster: "img/albums/thumb/javlaranamma_hajbymania.jpg"
+						},
+						{
+							pos: "6",
+							id: "16",
+							name: "R&auml;v bakom &ouml;rat",
+							album: "Falmsk&auml;rm",
+							year: "1988",
+							mp3: "tracks/1988_falmskarm/mp3/16_javlaranamma_rav_bakom_orat.mp3",
+							oga: "tracks/1988_falmskarm/ogg/16_javlaranamma_rav_bakom_orat.ogg",
+							poster: "img/albums/thumb/javlaranamma_falmskarm.jpg"
+						},
+						{
+							pos: "7",
+							id: "88",
+							name: "M&auml;nniskans b&auml;ste v&auml;n (bonus)",
+							album: "Fin i kanten",
+							year: "1999",
+							mp3: "tracks/1999_fin_i_kanten/mp3/24_javlaranamma_manniskans_baste_van_bonus.mp3",
+							oga: "tracks/1999_fin_i_kanten/ogg/24_javlaranamma_manniskans_baste_van_bonus.ogg",
+							poster: "img/albums/thumb/javlaranamma_finikanten.jpg"
+						},
+						{
+							pos: "8",
+							id: "46",
+							name: "Fel h&auml;st",
+							album: "50 &aring;r",
+							year: "1997",
+							mp3: "tracks/1997_50_ar/mp3/06_javlaranamma_fel_hast.mp3",
+							oga: "tracks/1997_50_ar/ogg/06_javlaranamma_fel_hast.ogg",
+							poster: "img/albums/thumb/javlaranamma_50ar.jpg"
+						},
+						{
+							pos: "9",
+							id: "59",
+							name: "Tv&aring; och en halv kalv (Kalles solokarri&auml;r)",
+							album: "50 &aring;r",
+							year: "1997",
+							mp3: "tracks/1997_50_ar/mp3/19_javlaranamma_tva_och_en_halv_kalv.mp3",
+							oga: "tracks/1997_50_ar/ogg/19_javlaranamma_tva_och_en_halv_kalv.ogg",
+							poster: "img/albums/thumb/javlaranamma_50ar.jpg"
+						},
+						{
+							pos: "10",
+							id: "29",
+							name: "Undan grabbar",
+							album: "Skinkankare",
+							year: "1995",
+							mp3: "tracks/1995_skinkankare/mp3/10_javlaranamma_undan_grabbar.mp3",
+							oga: "tracks/1995_skinkankare/ogg/10_javlaranamma_undan_grabbar.ogg",
+							poster: "img/albums/thumb/javlaranamma_skinkankare.jpg"
+						},
+						{
+							pos: "11",
+							id: "50",
+							name: "Pingistr&auml;narens jacka",
+							album: "50 &aring;r",
+							year: "1997",
+							mp3: "tracks/1997_50_ar/mp3/10_javlaranamma_pingistranarens_jacka.mp3",
+							oga: "tracks/1997_50_ar/ogg/10_javlaranamma_pingistranarens_jacka.ogg",
+							poster: "img/albums/thumb/javlaranamma_50ar.jpg"
+						},
+						{
+							pos: "12",
+							id: "42",
+							name: "En grape r&auml;tt upp",
+							album: "50 &aring;r",
+							year: "1997",
+							mp3: "tracks/1997_50_ar/mp3/02_javlaranamma_en_grape_ratt_upp.mp3",
+							oga: "tracks/1997_50_ar/ogg/02_javlaranamma_en_grape_ratt_upp.ogg",
+							poster: "img/albums/thumb/javlaranamma_50ar.jpg"
+						},
+						{
+							pos: "13",
+							id: "116",
+							name: "Raka r&ouml;r - originalet",
+							album: "&Auml;lskade G&ouml;teborg",
+							year: "2008",
+							mp3: "tracks/2008_alskade_goteborg/mp3/08_javlaranamma_raka_ror_originalet.mp3",
+							oga: "tracks/2008_alskade_goteborg/ogg/08_javlaranamma_raka_ror_originalet.ogg",
+							poster: "img/albums/thumb/javlaranamma_alskadegoteborg.jpg"
+						},
+						{
+							pos: "14",
+							id: "37",
+							name: "&Auml;nnu en l&aring;t (riktiga killar)",
+							album: "Hajbymania (&auml;nnu en julskiva)",
+							year: "1996",
+							mp3: "tracks/1996_hajbymania/mp3/02_javlaranamma_annu_en_lat.mp3",
+							oga: "tracks/1996_hajbymania/ogg/02_javlaranamma_annu_en_lat.ogg",
+							poster: "img/albums/thumb/javlaranamma_hajbymania.jpg"
+						},
+						{
+							pos: "15",
+							id: "75",
+							name: "Ode till en v&auml;n",
+							album: "Fin i kanten",
+							year: "1999",
+							mp3: "tracks/1999_fin_i_kanten/mp3/11_javlaranamma_ode_till_en_van.mp3",
+							oga: "tracks/1999_fin_i_kanten/ogg/11_javlaranamma_ode_till_en_van.ogg",
+							poster: "img/albums/thumb/javlaranamma_finikanten.jpg"
+						},
+						{
+							pos: "16",
+							id: "89",
+							name: "Min tjej &auml;r piggelin (tysk version) (bonus)",
+							album: "Fin i kanten",
+							year: "1999",
+							mp3: "tracks/1999_fin_i_kanten/mp3/25_javlaranamma_min_tjej_ar_piggelin_tysk_bonus.mp3",
+							oga: "tracks/1999_fin_i_kanten/ogg/25_javlaranamma_min_tjej_ar_piggelin_tysk_bonus.ogg",
+							poster: "img/albums/thumb/javlaranamma_finikanten.jpg"
+						},
+						{
+							pos: "17",
+							id: "111",
+							name: "Jazz!",
+							album: "&Auml;lskade G&ouml;teborg",
+							year: "2008",
+							mp3: "tracks/2008_alskade_goteborg/mp3/03_javlaranamma_jazz.mp3",
+							oga: "tracks/2008_alskade_goteborg/ogg/03_javlaranamma_jazz.ogg",
+							poster: "img/albums/thumb/javlaranamma_alskadegoteborg.jpg"
+						},
+						{
+							pos: "18",
+							id: "110",
+							name: "Sverige &auml;r ett avl&aring;ngt land",
+							album: "&Auml;lskade G&ouml;teborg",
+							year: "2008",
+							mp3: "tracks/2008_alskade_goteborg/mp3/02_javlaranamma_sverige_ar_ett_avlangt_land.mp3",
+							oga: "tracks/2008_alskade_goteborg/ogg/02_javlaranamma_sverige_ar_ett_avlangt_land.ogg",
+							poster: "img/albums/thumb/javlaranamma_alskadegoteborg.jpg"
+						},
+						{
+							pos: "19",
+							id: "79",
+							name: "Stellans visa",
+							album: "Fin i kanten",
+							year: "1999",
+							mp3: "tracks/1999_fin_i_kanten/mp3/15_javlaranamma_stellans_visa.mp3",
+							oga: "tracks/1999_fin_i_kanten/ogg/15_javlaranamma_stellans_visa.ogg",
+							poster: "img/albums/thumb/javlaranamma_finikanten.jpg"
+						},
+						{
+							pos: "20",
+							id: "45",
+							name: "En fyllegrej",
+							album: "50 &aring;r",
+							year: "1997",
+							mp3: "tracks/1997_50_ar/mp3/05_javlaranamma_en_fyllegrej.mp3",
+							oga: "tracks/1997_50_ar/ogg/05_javlaranamma_en_fyllegrej.ogg",
+							poster: "img/albums/thumb/javlaranamma_50ar.jpg"
+						},
+						{
+							pos: "21",
+							id: "96",
+							name: "En f&ouml;rtrollad kv&auml;ll",
+							album: "Det b&auml;sta fr&aring;n TV-serien",
+							year: "2000",
+							mp3: "tracks/2000_det_basta_fran_tv-serien/mp3/07_robinson-jorgen_jesu_pojk_en_fortrollad_kvall.mp3",
+							oga: "tracks/2000_det_basta_fran_tv-serien/ogg/07_robinson-jorgen_jesu_pojk_en_fortrollad_kvall.ogg",
+							poster: "img/albums/thumb/javlaranamma.jpg"
+						},
+						{
+							pos: "22",
+							id: "4",
+							name: "S&auml;kert som amen",
+							album: "Falmsk&auml;rm",
+							year: "1988",
+							mp3: "tracks/1988_falmskarm/mp3/04_javlaranamma_sakert_som_amen.mp3",
+							oga: "tracks/1988_falmskarm/ogg/04_javlaranamma_sakert_som_amen.ogg",
+							poster: "img/albums/thumb/javlaranamma_falmskarm.jpg"
+						},
+						{
+							pos: "23",
+							id: "36",
+							name: "Stellan, Staffan, J&ouml;rgen, Kalle och Tom (Prebens r&aring;d)",
+							album: "Hajbymania (&auml;nnu en julskiva)",
+							year: "1996",
+							mp3: "tracks/1996_hajbymania/mp3/01_javlaranamma_stellan_staffan_jorgen_kalle_tom.mp3",
+							oga: "tracks/1996_hajbymania/ogg/01_javlaranamma_stellan_staffan_jorgen_kalle_tom.ogg",
+							poster: "img/albums/thumb/javlaranamma_hajbymania.jpg"
+						},
+						{
+							pos: "24",
+							id: "7",
+							name: "Gl&ouml;m Glenn-&Aring;ke (Gl&ouml;m Glenn)",
+							album: "Falmsk&auml;rm",
+							year: "1988",
+							mp3: "tracks/1988_falmskarm/mp3/07_javlaranamma_glom_glenn-ake.mp3",
+							oga: "tracks/1988_falmskarm/ogg/07_javlaranamma_glom_glenn-ake.ogg",
+							poster: "img/albums/thumb/javlaranamma_falmskarm.jpg"
+						},
+						{
+							pos: "25",
+							id: "1",
+							name: "J&auml;vlaranammas marsch",
+							album: "Falmsk&auml;rm",
+							year: "1988",
+							mp3: "tracks/1988_falmskarm/mp3/01_javlaranamma_javlaranammas marsch.mp3",
+							oga: "tracks/1988_falmskarm/ogg/01_javlaranamma_javlaranammas marsch.ogg",
+							poster: "img/albums/thumb/javlaranamma_falmskarm.jpg"
+						},
+						{
+							pos: "26",
+							id: "8",
+							name: "Pickadulverman",
+							album: "Falmsk&auml;rm",
+							year: "1988",
+							mp3: "tracks/1988_falmskarm/mp3/08_javlaranamma_pickadulverman.mp3",
+							oga: "tracks/1988_falmskarm/ogg/08_javlaranamma_pickadulverman.ogg",
+							poster: "img/albums/thumb/javlaranamma_falmskarm.jpg"
+						},
+						{
+							pos: "27",
+							id: "83",
+							name: "Jag ligger i hallen",
+							album: "Fin i kanten",
+							year: "1999",
+							mp3: "tracks/1999_fin_i_kanten/mp3/19_javlaranamma_jag_ligger_i_hallen.mp3",
+							oga: "tracks/1999_fin_i_kanten/ogg/19_javlaranamma_jag_ligger_i_hallen.ogg",
+							poster: "img/albums/thumb/javlaranamma_finikanten.jpg"
+						},
+						{
+							pos: "28",
+							id: "27",
+							name: "Jack Danielsshorts",
+							album: "Skinkankare",
+							year: "1995",
+							mp3: "tracks/1995_skinkankare/mp3/08_javlaranamma_jack_danielsshorts.mp3",
+							oga: "tracks/1995_skinkankare/ogg/08_javlaranamma_jack_danielsshorts.ogg",
+							poster: "img/albums/thumb/javlaranamma_skinkankare.jpg"
+						},
+						{
+							pos: "29",
+							id: "5",
+							name: "Din syrra",
+							album: "Falmsk&auml;rm",
+							year: "1988",
+							mp3: "tracks/1988_falmskarm/mp3/05_javlaranamma_din_syrra.mp3",
+							oga: "tracks/1988_falmskarm/ogg/05_javlaranamma_din_syrra.ogg",
+							poster: "img/albums/thumb/javlaranamma_falmskarm.jpg"
+						},
+						{
+							pos: "30",
+							id: "55",
+							name: "Tr&ouml;tt och spytt (ode till gasquen)",
+							album: "50 &aring;r",
+							year: "1997",
+							mp3: "tracks/1997_50_ar/mp3/15_javlaranamma_trott_och_spytt.mp3",
+							oga: "tracks/1997_50_ar/ogg/15_javlaranamma_trott_och_spytt.ogg",
+							poster: "img/albums/thumb/javlaranamma_50ar.jpg"
+						},
+						{
+							pos: "31",
+							id: "57",
+							name: "The king of the sittring (Kalles solokarri&auml;r)",
+							album: "50 &aring;r",
+							year: "1997",
+							mp3: "tracks/1997_50_ar/mp3/17_javlaranamma_the_king_of_the_sittring.mp3",
+							oga: "tracks/1997_50_ar/ogg/17_javlaranamma_the_king_of_the_sittring.ogg",
+							poster: "img/albums/thumb/javlaranamma_50ar.jpg"
+						},
+						{
+							pos: "32",
+							id: "124",
+							name: "En femkrona stor",
+							album: "Merry P&aring;skmas",
+							year: "2011",
+							mp3: "tracks/2011_merry_paskmas/mp3/06_javlaranamma_en_femkrona_stor.mp3",
+							oga: "tracks/2011_merry_paskmas/ogg/06_javlaranamma_en_femkrona_stor.ogg",
+							poster: "img/albums/thumb/javlaranamma_paasiainen.jpg"
+						},
+						{
+							pos: "33",
+							id: "112",
+							name: "L&aring;t oss kalla det hyfs",
+							album: "&Auml;lskade G&ouml;teborg",
+							year: "2008",
+							mp3: "tracks/2008_alskade_goteborg/mp3/04_javlaranamma_lat_oss_kalla_det_hyfs.mp3",
+							oga: "tracks/2008_alskade_goteborg/ogg/04_javlaranamma_lat_oss_kalla_det_hyfs.ogg",
+							poster: "img/albums/thumb/javlaranamma_alskadegoteborg.jpg"
+						},
+						{
+							pos: "34",
+							id: "54",
+							name: "Hur fan skall jag h&auml;vda mig nu? (hur ska jag klara mig nu?)",
+							album: "50 &aring;r",
+							year: "1997",
+							mp3: "tracks/1997_50_ar/mp3/14_javlaranamma_hur_fan_skall_jag_havda_mig_nu.mp3",
+							oga: "tracks/1997_50_ar/ogg/14_javlaranamma_hur_fan_skall_jag_havda_mig_nu.ogg",
+							poster: "img/albums/thumb/javlaranamma_50ar.jpg"
+						},
+						{
+							pos: "35",
+							id: "23",
+							name: "G&auml;ngdans",
+							album: "Skinkankare",
+							year: "1995",
+							mp3: "tracks/1995_skinkankare/mp3/04_javlaranamma_gangdans.mp3",
+							oga: "tracks/1995_skinkankare/ogg/04_javlaranamma_gangdans.ogg",
+							poster: "img/albums/thumb/javlaranamma_skinkankare.jpg"
+						},
+						{
+							pos: "36",
+							id: "19",
+							name: "Fram me chipsen pojkar",
+							album: "Falmsk&auml;rm",
+							year: "1988",
+							mp3: "tracks/1988_falmskarm/mp3/19_javlaranamma_fram_me_chipsen_pojkar.mp3",
+							oga: "tracks/1988_falmskarm/ogg/19_javlaranamma_fram_me_chipsen_pojkar.ogg",
+							poster: "img/albums/thumb/javlaranamma_falmskarm.jpg"
+						},
+						{
+							pos: "37",
+							id: "105",
+							name: "Allt gick fel f&ouml;r Dennis",
+							album: "Det b&auml;sta fr&aring;n TV-serien",
+							year: "2000",
+							mp3: "tracks/2000_det_basta_fran_tv-serien/mp3/16_robinson-jorgen_jesu_pojk_allt_gick_fel_for_dennis.mp3",
+							oga: "tracks/2000_det_basta_fran_tv-serien/ogg/16_robinson-jorgen_jesu_pojk_allt_gick_fel_for_dennis.ogg",
+							poster: "img/albums/thumb/javlaranamma.jpg"
+						},
+						{
+							pos: "38",
+							id: "49",
+							name: "Bernts salonger (flickan med den tjocka s&aring;sen)",
+							album: "50 &aring;r",
+							year: "1997",
+							mp3: "tracks/1997_50_ar/mp3/09_javlaranamma_bernts_salonger.mp3",
+							oga: "tracks/1997_50_ar/ogg/09_javlaranamma_bernts_salonger.ogg",
+							poster: "img/albums/thumb/javlaranamma_50ar.jpg"
+						},
+						{
+							pos: "39",
+							id: "18",
+							name: "(Den f&ouml;rskr&auml;ckliga historien om) Molly Broline",
+							album: "Falmsk&auml;rm",
+							year: "1988",
+							mp3: "tracks/1988_falmskarm/mp3/18_javlaranamma_molly_broline.mp3",
+							oga: "tracks/1988_falmskarm/ogg/18_javlaranamma_molly_broline.ogg",
+							poster: "img/albums/thumb/javlaranamma_falmskarm.jpg"
+						},
+						{
+							pos: "40",
+							id: "120",
+							name: "Upp och hoppa",
+							album: "Merry P&aring;skmas",
+							year: "2011",
+							mp3: "tracks/2011_merry_paskmas/mp3/02_javlaranamma_upp_och_hoppa.mp3",
+							oga: "tracks/2011_merry_paskmas/ogg/02_javlaranamma_upp_och_hoppa.ogg",
+							poster: "img/albums/thumb/javlaranamma_paasiainen.jpg"
+						},
+						{
+							pos: "41",
+							id: "77",
+							name: "Filosofens hammare och tv&aring; f&ouml;r en i baren",
+							album: "Fin i kanten",
+							year: "1999",
+							mp3: "tracks/1999_fin_i_kanten/mp3/13_javlaranamma_filosofens_hammare_och_tva_for_en_i_baren.mp3",
+							oga: "tracks/1999_fin_i_kanten/ogg/13_javlaranamma_filosofens_hammare_och_tva_for_en_i_baren.ogg",
+							poster: "img/albums/thumb/javlaranamma_finikanten.jpg"
+						},
+						{
+							pos: "42",
+							id: "72",
+							name: "Tre franska gar&ccedil;ons (featuring Fletch)",
+							album: "Fin i kanten",
+							year: "1999",
+							mp3: "tracks/1999_fin_i_kanten/mp3/08_javlaranamma_tre_franska_garcons.mp3",
+							oga: "tracks/1999_fin_i_kanten/ogg/08_javlaranamma_tre_franska_garcons.ogg",
+							poster: "img/albums/thumb/javlaranamma_finikanten.jpg"
+						},
+						{
+							pos: "43",
+							id: "139",
+							name: "Vi kan kolla p&aring; den sen",
+							album: "Titiyopaketet",
+							year: "2012",
+							mp3: "tracks/2012_titiyopaketet/mp3/02_javlaranamma_vi_kan_kolla_på_den_sen.mp3",
+							oga: "tracks/2012_titiyopaketet/ogg/02_javlaranamma_vi_kan_kolla_på_den_sen.ogg",
+							poster: "img/albums/thumb/javlaranamma.jpg"
+						},
+						{
+							pos: "44",
+							id: "25",
+							name: "Kullamannen",
+							album: "Skinkankare",
+							year: "1995",
+							mp3: "tracks/1995_skinkankare/mp3/06_javlaranamma_kullamannen.mp3",
+							oga: "tracks/1995_skinkankare/ogg/06_javlaranamma_kullamannen.ogg",
+							poster: "img/albums/thumb/javlaranamma_skinkankare.jpg"
+						},
+						{
+							pos: "45",
+							id: "100",
+							name: "All time loser",
+							album: "Det b&auml;sta fr&aring;n TV-serien",
+							year: "2000",
+							mp3: "tracks/2000_det_basta_fran_tv-serien/mp3/11_robinson-jorgen_jesu_pojk_all_time_loser.mp3",
+							oga: "tracks/2000_det_basta_fran_tv-serien/ogg/11_robinson-jorgen_jesu_pojk_all_time_loser.ogg",
+							poster: "img/albums/thumb/javlaranamma.jpg"
+						},
+						{
+							pos: "46",
+							id: "126",
+							name: "R&auml;tt ut p&aring; bloggen",
+							album: "Merry P&aring;skmas",
+							year: "2011",
+							mp3: "tracks/2011_merry_paskmas/mp3/08_javlaranamma_ratt_ut_pa_bloggen.mp3",
+							oga: "tracks/2011_merry_paskmas/ogg/08_javlaranamma_ratt_ut_pa_bloggen.ogg",
+							poster: "img/albums/thumb/javlaranamma_paasiainen.jpg"
+						},
+						{
+							pos: "47",
+							id: "10",
+							name: "Fina fisken",
+							album: "Falmsk&auml;rm",
+							year: "1988",
+							mp3: "tracks/1988_falmskarm/mp3/10_javlaranamma_fina_fisken.mp3",
+							oga: "tracks/1988_falmskarm/ogg/10_javlaranamma_fina_fisken.ogg",
+							poster: "img/albums/thumb/javlaranamma_falmskarm.jpg"
+						},
+						{
+							pos: "48",
+							id: "117",
+							name: "1982",
+							album: "1982",
+							year: "2010",
+							mp3: "tracks/2010_1982/mp3/01_javlaranamma_1982.mp3",
+							oga: "tracks/2010_1982/ogg/01_javlaranamma_1982.ogg",
+							poster: "img/albums/thumb/javlaranamma.jpg"
+						},
+						{
+							pos: "49",
+							id: "133",
+							name: "Vinden viskar 'Jim'",
+							album: "Moses Christ Superstar",
+							year: "2012",
+							mp3: "tracks/2012_moses_christ_superstar/mp3/02_javlaranamma_vinden_viskar_jim.mp3",
+							oga: "tracks/2012_moses_christ_superstar/ogg/02_javlaranamma_vinden_viskar_jim.ogg",
+							poster: "img/albums/thumb/javlaranamma.jpg"
+						},
+						{
+							pos: "50",
+							id: "21",
+							name: "K&auml;lek",
+							album: "Skinkankare",
+							year: "1995",
+							mp3: "tracks/1995_skinkankare/mp3/02_javlaranamma_kalek.mp3",
+							oga: "tracks/1995_skinkankare/ogg/02_javlaranamma_kalek.ogg",
+							poster: "img/albums/thumb/javlaranamma_skinkankare.jpg"
+						},
+						{
+							pos: "51",
+							id: "134",
+							name: "Flumsnack",
+							album: "Moses Christ Superstar",
+							year: "2012",
+							mp3: "tracks/2012_moses_christ_superstar/mp3/03_javlaranamma_flumsnack.mp3",
+							oga: "tracks/2012_moses_christ_superstar/ogg/03_javlaranamma_flumsnack.ogg",
+							poster: "img/albums/thumb/javlaranamma.jpg"
+						},
+						{
+							pos: "52",
+							id: "115",
+							name: "Mylady",
+							album: "&Auml;lskade G&ouml;teborg",
+							year: "2008",
+							mp3: "tracks/2008_alskade_goteborg/mp3/07_javlaranamma_mylady.mp3",
+							oga: "tracks/2008_alskade_goteborg/ogg/07_javlaranamma_mylady.ogg",
+							poster: "img/albums/thumb/javlaranamma_alskadegoteborg.jpg"
+						},
+						{
+							pos: "53",
+							id: "70",
+							name: "Den sj&auml;lvklara l&ouml;sningen",
+							album: "Fin i kanten",
+							year: "1999",
+							mp3: "tracks/1999_fin_i_kanten/mp3/06_javlaranamma_den_sjalvklara_losningen.mp3",
+							oga: "tracks/1999_fin_i_kanten/ogg/06_javlaranamma_den_sjalvklara_losningen.ogg",
+							poster: "img/albums/thumb/javlaranamma_finikanten.jpg"
+						},
+						{
+							pos: "54",
+							id: "56",
+							name: "En sorglig historia",
+							album: "50 &aring;r",
+							year: "1997",
+							mp3: "tracks/1997_50_ar/mp3/16_javlaranamma_en_sorglig_historia.mp3",
+							oga: "tracks/1997_50_ar/ogg/16_javlaranamma_en_sorglig_historia.ogg",
+							poster: "img/albums/thumb/javlaranamma_50ar.jpg"
+						},
+						{
+							pos: "55",
+							id: "107",
+							name: "Kinesen med huvudet bakofram och lammet som hade en pistol (remix)",
+							album: "Kinesen med huvudet bakofram",
+							year: "2004",
+							mp3: "tracks/2004_kinesen_med_huvudet_bakofram/mp3/02_javlaranamma_kinesen_med_huvudet_bakofram_och_lammet_som_hade_en_pistol_remix.mp3",
+							oga: "tracks/2004_kinesen_med_huvudet_bakofram/ogg/02_javlaranamma_kinesen_med_huvudet_bakofram_och_lammet_som_hade_en_pistol_remix.ogg",
+							poster: "img/albums/thumb/javlaranamma.jpg"
+						},
+						{
+							pos: "56",
+							id: "118",
+							name: "F&ouml;rtroendet",
+							album: "1982",
+							year: "2010",
+							mp3: "tracks/2010_1982/mp3/02_javlaranamma_fortroendet.mp3",
+							oga: "tracks/2010_1982/ogg/02_javlaranamma_fortroendet.ogg",
+							poster: "img/albums/thumb/javlaranamma.jpg"
+						},
+						{
+							pos: "57",
+							id: "9",
+							name: "Teach me tiger",
+							album: "Falmsk&auml;rm",
+							year: "1988",
+							mp3: "tracks/1988_falmskarm/mp3/09_javlaranamma_teach_me_tiger.mp3",
+							oga: "tracks/1988_falmskarm/ogg/09_javlaranamma_teach_me_tiger.ogg",
+							poster: "img/albums/thumb/javlaranamma_falmskarm.jpg"
+						},
+						{
+							pos: "58",
+							id: "127",
+							name: "Bj&ouml;rnen och ejdern",
+							album: "Merry P&aring;skmas",
+							year: "2011",
+							mp3: "tracks/2011_merry_paskmas/mp3/09_javlaranamma_bjornen_och_ejdern.mp3",
+							oga: "tracks/2011_merry_paskmas/ogg/09_javlaranamma_bjornen_och_ejdern.ogg",
+							poster: "img/albums/thumb/javlaranamma_paasiainen.jpg"
+						},
+						{
+							pos: "59",
+							id: "125",
+							name: "Inte en molekyl",
+							album: "Merry P&aring;skmas",
+							year: "2011",
+							mp3: "tracks/2011_merry_paskmas/mp3/07_javlaranamma_inte_en_molekyl.mp3",
+							oga: "tracks/2011_merry_paskmas/ogg/07_javlaranamma_inte_en_molekyl.ogg",
+							poster: "img/albums/thumb/javlaranamma_paasiainen.jpg"
+						},
+						{
+							pos: "60",
+							id: "60",
+							name: "Vad t&auml;nkte jag p&aring;?",
+							album: "Max 1,5% sv&auml;ng",
+							year: "1998",
+							mp3: "tracks/1998_max_15_svang/mp3/01_javlaranamma_vad_tankte_jag_pa.mp3",
+							oga: "tracks/1998_max_15_svang/ogg/01_javlaranamma_vad_tankte_jag_pa.ogg",
+							poster: "img/albums/thumb/javlaranamma_max15svang.jpg"
+						},
+						{
+							pos: "61",
+							id: "20",
+							name: "P&aring; m&aring;ndan",
+							album: "Skinkankare",
+							year: "1995",
+							mp3: "tracks/1995_skinkankare/mp3/01_javlaranamma_pa_mandan.mp3",
+							oga: "tracks/1995_skinkankare/ogg/01_javlaranamma_pa_mandan.ogg",
+							poster: "img/albums/thumb/javlaranamma_skinkankare.jpg"
+						},
+						{
+							pos: "62",
+							id: "43",
+							name: "Angelique Wiklunds boxer",
+							album: "50 &aring;r",
+							year: "1997",
+							mp3: "tracks/1997_50_ar/mp3/03_javlaranamma_angelique_wiklunds_boxer.mp3",
+							oga: "tracks/1997_50_ar/ogg/03_javlaranamma_angelique_wiklunds_boxer.ogg",
+							poster: "img/albums/thumb/javlaranamma_50ar.jpg"
+						},
+						{
+							pos: "63",
+							id: "90",
+							name: "Helk&aring;t melodi",
+							album: "Det b&auml;sta fr&aring;n TV-serien",
+							year: "2000",
+							mp3: "tracks/2000_det_basta_fran_tv-serien/mp3/01_robinson-jorgen_jesu_pojk_helkat_melodi.mp3",
+							oga: "tracks/2000_det_basta_fran_tv-serien/ogg/01_robinson-jorgen_jesu_pojk_helkat_melodi.ogg",
+							poster: "img/albums/thumb/javlaranamma.jpg"
+						},
+						{
+							pos: "64",
+							id: "34",
+							name: "Ta mig p&aring; grejen",
+							album: "Skinkankare",
+							year: "1995",
+							mp3: "tracks/1995_skinkankare/mp3/15_javlaranamma_ta_mig_pa_grejen.mp3",
+							oga: "tracks/1995_skinkankare/ogg/15_javlaranamma_ta_mig_pa_grejen.ogg",
+							poster: "img/albums/thumb/javlaranamma_skinkankare.jpg"
+						},
+						{
+							pos: "65",
+							id: "30",
+							name: "Bara vi",
+							album: "Skinkankare",
+							year: "1995",
+							mp3: "tracks/1995_skinkankare/mp3/11_javlaranamma_bara_vi.mp3",
+							oga: "tracks/1995_skinkankare/ogg/11_javlaranamma_bara_vi.ogg",
+							poster: "img/albums/thumb/javlaranamma_skinkankare.jpg"
+						},
+						{
+							pos: "66",
+							id: "132",
+							name: "Delfinerna",
+							album: "Moses Christ Superstar",
+							year: "2012",
+							mp3: "tracks/2012_moses_christ_superstar/mp3/01_javlaranamma_delfinerna.mp3",
+							oga: "tracks/2012_moses_christ_superstar/ogg/01_javlaranamma_delfinerna.ogg",
+							poster: "img/albums/thumb/javlaranamma.jpg"
+						},
+						{
+							pos: "67",
+							id: "22",
+							name: "Idioten",
+							album: "Skinkankare",
+							year: "1995",
+							mp3: "tracks/1995_skinkankare/mp3/03_javlaranamma_idioten.mp3",
+							oga: "tracks/1995_skinkankare/ogg/03_javlaranamma_idioten.ogg",
+							poster: "img/albums/thumb/javlaranamma_skinkankare.jpg"
+						},
+						{
+							pos: "68",
+							id: "97",
+							name: "H&aring;rd idag",
+							album: "Det b&auml;sta fr&aring;n TV-serien",
+							year: "2000",
+							mp3: "tracks/2000_det_basta_fran_tv-serien/mp3/08_robinson-jorgen_jesu_pojk_hard_idag.mp3",
+							oga: "tracks/2000_det_basta_fran_tv-serien/ogg/08_robinson-jorgen_jesu_pojk_hard_idag.ogg",
+							poster: "img/albums/thumb/javlaranamma.jpg"
+						},
+						{
+							pos: "69",
+							id: "12",
+							name: "Raka r&ouml;r",
+							album: "Falmsk&auml;rm",
+							year: "1988",
+							mp3: "tracks/1988_falmskarm/mp3/12_javlaranamma_raka_ror.mp3",
+							oga: "tracks/1988_falmskarm/ogg/12_javlaranamma_raka_ror.ogg",
+							poster: "img/albums/thumb/javlaranamma_falmskarm.jpg"
+						},
+						{
+							pos: "70",
+							id: "142",
+							name: "Up and Hop",
+							album: "Devils Enema",
+							year: "2013",
+							mp3: "tracks/2013_devils_enema/mp3/01_javlarnamma_up_and_hop.mp3",
+							oga: "tracks/2013_devils_enema/ogg/01_javlarnamma_up_and_hop.ogg",
+							poster: "img/albums/thumb/javlaranamma.jpg"
+						},
+						{
+							pos: "71",
+							id: "140",
+							name: "Djerry",
+							album: "Titiyopaketet",
+							year: "2012",
+							mp3: "tracks/2012_titiyopaketet/mp3/03_javlaranamma_djerry.mp3",
+							oga: "tracks/2012_titiyopaketet/ogg/03_javlaranamma_djerry.ogg",
+							poster: "img/albums/thumb/javlaranamma.jpg"
+						},
+						{
+							pos: "72",
+							id: "11",
+							name: "Haspelsp&ouml;t",
+							album: "Falmsk&auml;rm",
+							year: "1988",
+							mp3: "tracks/1988_falmskarm/mp3/11_javlaranamma_haspelspot.mp3",
+							oga: "tracks/1988_falmskarm/ogg/11_javlaranamma_haspelspot.ogg",
+							poster: "img/albums/thumb/javlaranamma_falmskarm.jpg"
+						},
+						{
+							pos: "73",
+							id: "15",
+							name: "L&ouml;",
+							album: "Falmsk&auml;rm",
+							year: "1988",
+							mp3: "tracks/1988_falmskarm/mp3/15_javlaranamma_lo.mp3",
+							oga: "tracks/1988_falmskarm/ogg/15_javlaranamma_lo.ogg",
+							poster: "img/albums/thumb/javlaranamma_falmskarm.jpg"
+						},
+						{
+							pos: "74",
+							id: "122",
+							name: "En extra ledig dag",
+							album: "Merry P&aring;skmas",
+							year: "2011",
+							mp3: "tracks/2011_merry_paskmas/mp3/04_javlaranamma_en_extra_ledig_dag.mp3",
+							oga: "tracks/2011_merry_paskmas/ogg/04_javlaranamma_en_extra_ledig_dag.ogg",
+							poster: "img/albums/thumb/javlaranamma_paasiainen.jpg"
+						},
+						{
+							pos: "75",
+							id: "93",
+							name: "Alla &auml;r lika bra",
+							album: "Det b&auml;sta fr&aring;n TV-serien",
+							year: "2000",
+							mp3: "tracks/2000_det_basta_fran_tv-serien/mp3/04_robinson-jorgen_jesu_pojk_alla_ar_lika_bra.mp3",
+							oga: "tracks/2000_det_basta_fran_tv-serien/ogg/04_robinson-jorgen_jesu_pojk_alla_ar_lika_bra.ogg",
+							poster: "img/albums/thumb/javlaranamma.jpg"
+						},
+						{
+							pos: "76",
+							id: "52",
+							name: "L&auml;gg mig vid elementet",
+							album: "50 &aring;r",
+							year: "1997",
+							mp3: "tracks/1997_50_ar/mp3/12_javlaranamma_lagg_mig_vid_elementet.mp3",
+							oga: "tracks/1997_50_ar/ogg/12_javlaranamma_lagg_mig_vid_elementet.ogg",
+							poster: "img/albums/thumb/javlaranamma_50ar.jpg"
+						},
+						{
+							pos: "77",
+							id: "137",
+							name: "Let my people go",
+							album: "Moses Christ Superstar",
+							year: "2012",
+							mp3: "tracks/2012_moses_christ_superstar/mp3/06_javlaranamma_let_my_people_go.mp3",
+							oga: "tracks/2012_moses_christ_superstar/ogg/06_javlaranamma_let_my_people_go.ogg",
+							poster: "img/albums/thumb/javlaranamma.jpg"
+						},
+						{
+							pos: "78",
+							id: "65",
+							name: "J&auml;vlaranammas credo (intro)",
+							album: "Fin i kanten",
+							year: "1999",
+							mp3: "tracks/1999_fin_i_kanten/mp3/01_javlaranamma_javlaranammas_credo_intro.mp3",
+							oga: "tracks/1999_fin_i_kanten/ogg/01_javlaranamma_javlaranammas_credo_intro.ogg",
+							poster: "img/albums/thumb/javlaranamma_finikanten.jpg"
+						},
+						{
+							pos: "79",
+							id: "101",
+							name: "Ibland skv&auml;tter det",
+							album: "Det b&auml;sta fr&aring;n TV-serien",
+							year: "2000",
+							mp3: "tracks/2000_det_basta_fran_tv-serien/mp3/12_robinson-jorgen_jesu_pojk_ibland_skvatter_det.mp3",
+							oga: "tracks/2000_det_basta_fran_tv-serien/ogg/12_robinson-jorgen_jesu_pojk_ibland_skvatter_det.ogg",
+							poster: "img/albums/thumb/javlaranamma.jpg"
+						},
+						{
+							pos: "80",
+							id: "136",
+							name: "The Pain",
+							album: "Moses Christ Superstar",
+							year: "2012",
+							mp3: "tracks/2012_moses_christ_superstar/mp3/05_javlaranamma_the_pain.mp3",
+							oga: "tracks/2012_moses_christ_superstar/ogg/05_javlaranamma_the_pain.ogg",
+							poster: "img/albums/thumb/javlaranamma.jpg"
+						},
+						{
+							pos: "81",
+							id: "51",
+							name: "Det blir v&auml;rst f&ouml;r dig, min v&auml;n",
+							album: "50 &aring;r",
+							year: "1997",
+							mp3: "tracks/1997_50_ar/mp3/11_javlaranamma_det_blir_varst_for_dig_min_van.mp3",
+							oga: "tracks/1997_50_ar/ogg/11_javlaranamma_det_blir_varst_for_dig_min_van.ogg",
+							poster: "img/albums/thumb/javlaranamma_50ar.jpg"
+						},
+						{
+							pos: "82",
+							id: "63",
+							name: "Inte gr&ouml;na f&auml;ltets schack",
+							album: "Max 1,5% sv&auml;ng",
+							year: "1998",
+							mp3: "tracks/1998_max_15_svang/mp3/04_javlaranamma_inte_grona_faltets_schack.mp3",
+							oga: "tracks/1998_max_15_svang/ogg/04_javlaranamma_inte_grona_faltets_schack.ogg",
+							poster: "img/albums/thumb/javlaranamma_max15svang.jpg"
+						},
+						{
+							pos: "83",
+							id: "130",
+							name: "Det finaste",
+							album: "Hemma &auml;r b&auml;st",
+							year: "2011",
+							mp3: "tracks/2011_hemma_ar_bast/mp3/03_anammaresor_det_finaste.mp3",
+							oga: "tracks/2011_hemma_ar_bast/ogg/03_anammaresor_det_finaste.ogg",
+							poster: "img/albums/thumb/anammaresor_hemmaarbast.jpg"
+						},
+						{
+							pos: "84",
+							id: "123",
+							name: "Du t&auml;nker s&aring;, du",
+							album: "Merry P&aring;skmas",
+							year: "2011",
+							mp3: "tracks/2011_merry_paskmas/mp3/05_javlaranamma_du_tanker_sa_du.mp3",
+							oga: "tracks/2011_merry_paskmas/ogg/05_javlaranamma_du_tanker_sa_du.ogg",
+							poster: "img/albums/thumb/javlaranamma_paasiainen.jpg"
+						},
+						{
+							pos: "85",
+							id: "6",
+							name: "Flong nya loafers",
+							album: "Falmsk&auml;rm",
+							year: "1988",
+							mp3: "tracks/1988_falmskarm/mp3/06_javlaranamma_flong_nya_loafers.mp3",
+							oga: "tracks/1988_falmskarm/ogg/06_javlaranamma_flong_nya_loafers.ogg",
+							poster: "img/albums/thumb/javlaranamma_falmskarm.jpg"
+						},
+						{
+							pos: "86",
+							id: "92",
+							name: "L&aring;t mig d&ouml;",
+							album: "Det b&auml;sta fr&aring;n TV-serien",
+							year: "2000",
+							mp3: "tracks/2000_det_basta_fran_tv-serien/mp3/03_robinson-jorgen_jesu_pojk_lat_mig_do.mp3",
+							oga: "tracks/2000_det_basta_fran_tv-serien/ogg/03_robinson-jorgen_jesu_pojk_lat_mig_do.ogg",
+							poster: "img/albums/thumb/javlaranamma.jpg"
+						},
+						{
+							pos: "87",
+							id: "78",
+							name: "Anette",
+							album: "Fin i kanten",
+							year: "1999",
+							mp3: "tracks/1999_fin_i_kanten/mp3/14_javlaranamma_anette.mp3",
+							oga: "tracks/1999_fin_i_kanten/ogg/14_javlaranamma_anette.ogg",
+							poster: "img/albums/thumb/javlaranamma_finikanten.jpg"
+						},
+						{
+							pos: "88",
+							id: "141",
+							name: "Comme ci, Comme ca",
+							album: "Titiyopaketet",
+							year: "2012",
+							mp3: "tracks/2012_titiyopaketet/mp3/04_javlaranamma_comme_ci_comme_ca.mp3",
+							oga: "tracks/2012_titiyopaketet/ogg/04_javlaranamma_comme_ci_comme_ca.ogg",
+							poster: "img/albums/thumb/javlaranamma.jpg"
+						},
+						{
+							pos: "89",
+							id: "131",
+							name: "Prio ett",
+							album: "Hemma &auml;r b&auml;st",
+							year: "2011",
+							mp3: "tracks/2011_hemma_ar_bast/mp3/04_anammaresor_prio_ett.mp3",
+							oga: "tracks/2011_hemma_ar_bast/ogg/04_anammaresor_prio_ett.ogg",
+							poster: "img/albums/thumb/anammaresor_hemmaarbast.jpg"
+						},
+						{
+							pos: "90",
+							id: "106",
+							name: "Kinesen med huvudet bakofram och lammet som hade en pistol",
+							album: "Kinesen med huvudet bakofram",
+							year: "2004",
+							mp3: "tracks/2004_kinesen_med_huvudet_bakofram/mp3/01_javlaranamma_kinesen_med_huvudet_bakofram_och_lammet_som_hade_en_pistol.mp3",
+							oga: "tracks/2004_kinesen_med_huvudet_bakofram/ogg/01_javlaranamma_kinesen_med_huvudet_bakofram_och_lammet_som_hade_en_pistol.ogg",
+							poster: "img/albums/thumb/javlaranamma.jpg"
+						},
+						{
+							pos: "91",
+							id: "143",
+							name: "The finest thing",
+							album: "Devils Enema",
+							year: "2013",
+							mp3: "tracks/2013_devils_enema/mp3/02_javlaranamma_the_finest_thing.mp3",
+							oga: "tracks/2013_devils_enema/ogg/02_javlaranamma_the_finest_thing.ogg",
+							poster: "img/albums/thumb/javlaranamma.jpg"
+						},
+						{
+							pos: "92",
+							id: "41",
+							name: "Karneval i stan",
+							album: "50 &aring;r",
+							year: "1997",
+							mp3: "tracks/1997_50_ar/mp3/01_javlaranamma_karneval_i_stan.mp3",
+							oga: "tracks/1997_50_ar/ogg/01_javlaranamma_karneval_i_stan.ogg",
+							poster: "img/albums/thumb/javlaranamma_50ar.jpg"
+						},
+						{
+							pos: "93",
+							id: "64",
+							name: "Ren pur k&auml;rlek",
+							album: "Max 1,5% sv&auml;ng",
+							year: "1998",
+							mp3: "tracks/1998_max_15_svang/mp3/05_javlaranamma_ren_pur_karlek.mp3",
+							oga: "tracks/1998_max_15_svang/ogg/05_javlaranamma_ren_pur_karlek.ogg",
+							poster: "img/albums/thumb/javlaranamma_max15svang.jpg"
+						},
+						{
+							pos: "94",
+							id: "69",
+							name: "Marie i rummet",
+							album: "Fin i kanten",
+							year: "1999",
+							mp3: "tracks/1999_fin_i_kanten/mp3/05_javlaranamma_marie_i_rummet.mp3",
+							oga: "tracks/1999_fin_i_kanten/ogg/05_javlaranamma_marie_i_rummet.ogg",
+							poster: "img/albums/thumb/javlaranamma_finikanten.jpg"
+						},
+						{
+							pos: "95",
+							id: "121",
+							name: "G&aring; f&ouml;rbi",
+							album: "Merry P&aring;skmas",
+							year: "2011",
+							mp3: "tracks/2011_merry_paskmas/mp3/03_javlaranamma_ga_forbi.mp3",
+							oga: "tracks/2011_merry_paskmas/ogg/03_javlaranamma_ga_forbi.ogg",
+							poster: "img/albums/thumb/javlaranamma_paasiainen.jpg"
+						},
+						{
+							pos: "96",
+							id: "84",
+							name: "Hale bale",
+							album: "Fin i kanten",
+							year: "1999",
+							mp3: "tracks/1999_fin_i_kanten/mp3/20_javlaranamma_hale_bale.mp3",
+							oga: "tracks/1999_fin_i_kanten/ogg/20_javlaranamma_hale_bale.ogg",
+							poster: "img/albums/thumb/javlaranamma_finikanten.jpg"
+						},
+						{
+							pos: "97",
+							id: "17",
+							name: "Boots mot pung",
+							album: "Falmsk&auml;rm",
+							year: "1988",
+							mp3: "tracks/1988_falmskarm/mp3/17_javlaranamma_boots_mot_pung.mp3",
+							oga: "tracks/1988_falmskarm/ogg/17_javlaranamma_boots_mot_pung.ogg",
+							poster: "img/albums/thumb/javlaranamma_falmskarm.jpg"
+						},
+						{
+							pos: "98",
+							id: "2",
+							name: "Irmeli",
+							album: "Falmsk&auml;rm",
+							year: "1988",
+							mp3: "tracks/1988_falmskarm/mp3/02_javlaranamma_irmeli.mp3",
+							oga: "tracks/1988_falmskarm/ogg/02_javlaranamma_irmeli.ogg",
+							poster: "img/albums/thumb/javlaranamma_falmskarm.jpg"
+						},
+						{
+							pos: "99",
+							id: "87",
+							name: "J&auml;vlaranammas sittningsvisa",
+							album: "Fin i kanten",
+							year: "1999",
+							mp3: "tracks/1999_fin_i_kanten/mp3/23_javlaranamma_javlaranammas_sittningsvisa.mp3",
+							oga: "tracks/1999_fin_i_kanten/ogg/23_javlaranamma_javlaranammas_sittningsvisa.ogg",
+							poster: "img/albums/thumb/javlaranamma_finikanten.jpg"
+						},
+						{
+							pos: "100",
+							id: "129",
+							name: "St&aring; upp!",
+							album: "Hemma &auml;r b&auml;st",
+							year: "2011",
+							mp3: "tracks/2011_hemma_ar_bast/mp3/02_anammaresor_sta_upp.mp3",
+							oga: "tracks/2011_hemma_ar_bast/ogg/02_anammaresor_sta_upp.ogg",
+							poster: "img/albums/thumb/anammaresor_hemmaarbast.jpg"
+						},
+						{
+							pos: "101",
+							id: "113",
+							name: "P&aring;satt av Chao-Li",
+							album: "&Auml;lskade G&ouml;teborg",
+							year: "2008",
+							mp3: "tracks/2008_alskade_goteborg/mp3/05_javlaranamma_pasatt_av_chao-li.mp3",
+							oga: "tracks/2008_alskade_goteborg/ogg/05_javlaranamma_pasatt_av_chao-li.ogg",
+							poster: "img/albums/thumb/javlaranamma_alskadegoteborg.jpg"
+						},
+						{
+							pos: "102",
+							id: "48",
+							name: "&Auml;ntligen m&aring;ndag",
+							album: "50 &aring;r",
+							year: "1997",
+							mp3: "tracks/1997_50_ar/mp3/08_javlaranamma_antligen_mandag.mp3",
+							oga: "tracks/1997_50_ar/ogg/08_javlaranamma_antligen_mandag.ogg",
+							poster: "img/albums/thumb/javlaranamma_50ar.jpg"
+						},
+						{
+							pos: "103",
+							id: "135",
+							name: "Trenne element",
+							album: "Moses Christ Superstar",
+							year: "2012",
+							mp3: "tracks/2012_moses_christ_superstar/mp3/04_javlaranamma_trenne_element.mp3",
+							oga: "tracks/2012_moses_christ_superstar/ogg/04_javlaranamma_trenne_element.ogg",
+							poster: "img/albums/thumb/javlaranamma.jpg"
+						},
+						{
+							pos: "104",
+							id: "102",
+							name: "Tjillevipp",
+							album: "Det b&auml;sta fr&aring;n TV-serien",
+							year: "2000",
+							mp3: "tracks/2000_det_basta_fran_tv-serien/mp3/13_robinson-jorgen_jesu_pojk_tjillevipp.mp3",
+							oga: "tracks/2000_det_basta_fran_tv-serien/ogg/13_robinson-jorgen_jesu_pojk_tjillevipp.ogg",
+							poster: "img/albums/thumb/javlaranamma.jpg"
+						},
+						{
+							pos: "105",
+							id: "66",
+							name: "J&auml;vlaranammas credo (fulla, fattiga och feta)",
+							album: "Fin i kanten",
+							year: "1999",
+							mp3: "tracks/1999_fin_i_kanten/mp3/02_javlaranamma_javlaranammas_credo_fulla_fattiga_och_feta.mp3",
+							oga: "tracks/1999_fin_i_kanten/ogg/02_javlaranamma_javlaranammas_credo_fulla_fattiga_och_feta.ogg",
+							poster: "img/albums/thumb/javlaranamma_finikanten.jpg"
+						},
+						{
+							pos: "106",
+							id: "73",
+							name: "Min tjej &auml;r piggelin",
+							album: "Fin i kanten",
+							year: "1999",
+							mp3: "tracks/1999_fin_i_kanten/mp3/09_javlaranamma_min_tjej_ar_piggelin.mp3",
+							oga: "tracks/1999_fin_i_kanten/ogg/09_javlaranamma_min_tjej_ar_piggelin.ogg",
+							poster: "img/albums/thumb/javlaranamma_finikanten.jpg"
+						},
+						{
+							pos: "107",
+							id: "33",
+							name: "K&auml;th",
+							album: "Skinkankare",
+							year: "1995",
+							mp3: "tracks/1995_skinkankare/mp3/14_javlaranamma_kath.mp3",
+							oga: "tracks/1995_skinkankare/ogg/14_javlaranamma_kath.ogg",
+							poster: "img/albums/thumb/javlaranamma_skinkankare.jpg"
+						},
+						{
+							pos: "108",
+							id: "95",
+							name: "S&aring;d&auml;r n&auml;r man &auml;r k&auml;r",
+							album: "Det b&auml;sta fr&aring;n TV-serien",
+							year: "2000",
+							mp3: "tracks/2000_det_basta_fran_tv-serien/mp3/06_robinson-jorgen_jesu_pojk_sadar_nar_man_ar_kar.mp3",
+							oga: "tracks/2000_det_basta_fran_tv-serien/ogg/06_robinson-jorgen_jesu_pojk_sadar_nar_man_ar_kar.ogg",
+							poster: "img/albums/thumb/javlaranamma.jpg"
+						},
+						{
+							pos: "109",
+							id: "32",
+							name: "Kent",
+							album: "Skinkankare",
+							year: "1995",
+							mp3: "tracks/1995_skinkankare/mp3/13_javlaranamma_kent.mp3",
+							oga: "tracks/1995_skinkankare/ogg/13_javlaranamma_kent.ogg",
+							poster: "img/albums/thumb/javlaranamma_skinkankare.jpg"
+						},
+						{
+							pos: "110",
+							id: "82",
+							name: "En vecka att bara l&aring;ta g&aring;",
+							album: "Fin i kanten",
+							year: "1999",
+							mp3: "tracks/1999_fin_i_kanten/mp3/18_javlaranamma_en_vecka_att_bara_lata_ga.mp3",
+							oga: "tracks/1999_fin_i_kanten/ogg/18_javlaranamma_en_vecka_att_bara_lata_ga.ogg",
+							poster: "img/albums/thumb/javlaranamma_finikanten.jpg"
+						},
+						{
+							pos: "111",
+							id: "85",
+							name: "Stryk p&aring; Dancin' Dingo",
+							album: "Fin i kanten",
+							year: "1999",
+							mp3: "tracks/1999_fin_i_kanten/mp3/21_javlaranamma_stryk_pa_dancin_dingo.mp3",
+							oga: "tracks/1999_fin_i_kanten/ogg/21_javlaranamma_stryk_pa_dancin_dingo.ogg",
+							poster: "img/albums/thumb/javlaranamma_finikanten.jpg"
+						},
+						{
+							pos: "112",
+							id: "47",
+							name: "Surt sa r&auml;ven",
+							album: "50 &aring;r",
+							year: "1997",
+							mp3: "tracks/1997_50_ar/mp3/07_javlaranamma_surt_sa_raven.mp3",
+							oga: "tracks/1997_50_ar/ogg/07_javlaranamma_surt_sa_raven.ogg",
+							poster: "img/albums/thumb/javlaranamma_50ar.jpg"
+						},
+						{
+							pos: "113",
+							id: "91",
+							name: "Sven (v&auml;rldens tjockaste jockey)",
+							album: "Det b&auml;sta fr&aring;n TV-serien",
+							year: "2000",
+							mp3: "tracks/2000_det_basta_fran_tv-serien/mp3/02_robinson-jorgen_jesu_pojk_sven_varldens_tjockaste_jockey.mp3",
+							oga: "tracks/2000_det_basta_fran_tv-serien/ogg/02_robinson-jorgen_jesu_pojk_sven_varldens_tjockaste_jockey.ogg",
+							poster: "img/albums/thumb/javlaranamma.jpg"
+						},
+						{
+							pos: "114",
+							id: "86",
+							name: "Alla killars dans",
+							album: "Fin i kanten",
+							year: "1999",
+							mp3: "tracks/1999_fin_i_kanten/mp3/22_javlaranamma_alla_killars_dans.mp3",
+							oga: "tracks/1999_fin_i_kanten/ogg/22_javlaranamma_alla_killars_dans.ogg",
+							poster: "img/albums/thumb/javlaranamma_finikanten.jpg"
+						},
+						{
+							pos: "115",
+							id: "24",
+							name: "Rioja-Bambar",
+							album: "Skinkankare",
+							year: "1995",
+							mp3: "tracks/1995_skinkankare/mp3/05_javlaranamma_rioja_bambar.mp3",
+							oga: "tracks/1995_skinkankare/ogg/05_javlaranamma_rioja_bambar.ogg",
+							poster: "img/albums/thumb/javlaranamma_skinkankare.jpg"
+						},
+						{
+							pos: "116",
+							id: "14",
+							name: "Fr&aring;n far till son",
+							album: "Falmsk&auml;rm",
+							year: "1988",
+							mp3: "tracks/1988_falmskarm/mp3/14_javlaranamma_fran_far_till_son.mp3",
+							oga: "tracks/1988_falmskarm/ogg/14_javlaranamma_fran_far_till_son.ogg",
+							poster: "img/albums/thumb/javlaranamma_falmskarm.jpg"
+						},
+						{
+							pos: "117",
+							id: "109",
+							name: "Dom &auml;r ledsna",
+							album: "&Auml;lskade G&ouml;teborg",
+							year: "2008",
+							mp3: "tracks/2008_alskade_goteborg/mp3/01_javlaranamma_dom_ar_ledsna.mp3",
+							oga: "tracks/2008_alskade_goteborg/ogg/01_javlaranamma_dom_ar_ledsna.ogg",
+							poster: "img/albums/thumb/javlaranamma_alskadegoteborg.jpg"
+						},
+						{
+							pos: "118",
+							id: "39",
+							name: "Denna sida upp (sp&auml;nna p&aring;)",
+							album: "Hajbymania (&auml;nnu en julskiva)",
+							year: "1996",
+							mp3: "tracks/1996_hajbymania/mp3/04_javlaranamma_denna_sida_upp.mp3",
+							oga: "tracks/1996_hajbymania/ogg/04_javlaranamma_denna_sida_upp.ogg",
+							poster: "img/albums/thumb/javlaranamma_hajbymania.jpg"
+						},
+						{
+							pos: "119",
+							id: "3",
+							name: "Fyllefloskler",
+							album: "Falmsk&auml;rm",
+							year: "1988",
+							mp3: "tracks/1988_falmskarm/mp3/03_javlaranamma_fyllefloskler.mp3",
+							oga: "tracks/1988_falmskarm/ogg/03_javlaranamma_fyllefloskler.ogg",
+							poster: "img/albums/thumb/javlaranamma_falmskarm.jpg"
+						},
+						{
+							pos: "120",
+							id: "13",
+							name: "H&auml;sttransporten",
+							album: "Falmsk&auml;rm",
+							year: "1988",
+							mp3: "tracks/1988_falmskarm/mp3/13_javlaranamma_hasttransporten.mp3",
+							oga: "tracks/1988_falmskarm/ogg/13_javlaranamma_hasttransporten.ogg",
+							poster: "img/albums/thumb/javlaranamma_falmskarm.jpg"
+						},
+						{
+							pos: "121",
+							id: "61",
+							name: "Morgan bl&aring;vitt",
+							album: "Max 1,5% sv&auml;ng",
+							year: "1998",
+							mp3: "tracks/1998_max_15_svang/mp3/02_javlaranamma_morgan_blavitt.mp3",
+							oga: "tracks/1998_max_15_svang/ogg/02_javlaranamma_morgan_blavitt.ogg",
+							poster: "img/albums/thumb/javlaranamma_max15svang.jpg"
+						},
+						{
+							pos: "122",
+							id: "80",
+							name: "Solen g&aring;r ner",
+							album: "Fin i kanten",
+							year: "1999",
+							mp3: "tracks/1999_fin_i_kanten/mp3/16_javlaranamma_solen_gar_ner.mp3",
+							oga: "tracks/1999_fin_i_kanten/ogg/16_javlaranamma_solen_gar_ner.ogg",
+							poster: "img/albums/thumb/javlaranamma_finikanten.jpg"
+						},
+						{
+							pos: "123",
+							id: "104",
+							name: "Barnfabriken",
+							album: "Det b&auml;sta fr&aring;n TV-serien",
+							year: "2000",
+							mp3: "tracks/2000_det_basta_fran_tv-serien/mp3/15_robinson-jorgen_jesu_pojk_barnfabriken.mp3",
+							oga: "tracks/2000_det_basta_fran_tv-serien/ogg/15_robinson-jorgen_jesu_pojk_barnfabriken.ogg",
+							poster: "img/albums/thumb/javlaranamma.jpg"
+						},
+						{
+							pos: "124",
+							id: "94",
+							name: "Ett varningens ord",
+							album: "Det b&auml;sta fr&aring;n TV-serien",
+							year: "2000",
+							mp3: "tracks/2000_det_basta_fran_tv-serien/mp3/05_robinson-jorgen_jesu_pojk_ett_varningens_ord.mp3",
+							oga: "tracks/2000_det_basta_fran_tv-serien/ogg/05_robinson-jorgen_jesu_pojk_ett_varningens_ord.ogg",
+							poster: "img/albums/thumb/javlaranamma.jpg"
+						},
+						{
+							pos: "125",
+							id: "81",
+							name: "Tjejbacillen",
+							album: "Fin i kanten",
+							year: "1999",
+							mp3: "tracks/1999_fin_i_kanten/mp3/17_javlaranamma_tjejbacillen.mp3",
+							oga: "tracks/1999_fin_i_kanten/ogg/17_javlaranamma_tjejbacillen.ogg",
+							poster: "img/albums/thumb/javlaranamma_finikanten.jpg"
+						},
+						{
+							pos: "126",
+							id: "74",
+							name: "I Sparrings ungdom",
+							album: "Fin i kanten",
+							year: "1999",
+							mp3: "tracks/1999_fin_i_kanten/mp3/10_javlaranamma_i_sparrings_ungdom.mp3",
+							oga: "tracks/1999_fin_i_kanten/ogg/10_javlaranamma_i_sparrings_ungdom.ogg",
+							poster: "img/albums/thumb/javlaranamma_finikanten.jpg"
+						},
+						{
+							pos: "127",
+							id: "71",
+							name: "S&auml;g inget Susanne",
+							album: "Fin i kanten",
+							year: "1999",
+							mp3: "tracks/1999_fin_i_kanten/mp3/07_javlaranamma_sag_inget_susanne.mp3",
+							oga: "tracks/1999_fin_i_kanten/ogg/07_javlaranamma_sag_inget_susanne.ogg",
+							poster: "img/albums/thumb/javlaranamma_finikanten.jpg"
+						},
+						{
+							pos: "128",
+							id: "98",
+							name: "Plockad av snuten",
+							album: "Det b&auml;sta fr&aring;n TV-serien",
+							year: "2000",
+							mp3: "tracks/2000_det_basta_fran_tv-serien/mp3/09_robinson-jorgen_jesu_pojk_plockad_av_snuten.mp3",
+							oga: "tracks/2000_det_basta_fran_tv-serien/ogg/09_robinson-jorgen_jesu_pojk_plockad_av_snuten.ogg",
+							poster: "img/albums/thumb/javlaranamma.jpg"
+						},
+						{
+							pos: "129",
+							id: "44",
+							name: "L&auml;gg ner den bruden",
+							album: "50 &aring;r",
+							year: "1997",
+							mp3: "tracks/1997_50_ar/mp3/04_javlaranamma_lagg_ner_den_bruden.mp3",
+							oga: "tracks/1997_50_ar/ogg/04_javlaranamma_lagg_ner_den_bruden.ogg",
+							poster: "img/albums/thumb/javlaranamma_50ar.jpg"
+						},
+						{
+							pos: "130",
+							id: "119",
+							name: "P&aring;skevangeliet",
+							album: "Merry P&aring;skmas",
+							year: "2011",
+							mp3: "tracks/2011_merry_paskmas/mp3/01_javlaranamma_paskevangeliet.mp3",
+							oga: "tracks/2011_merry_paskmas/ogg/01_javlaranamma_paskevangeliet.ogg",
+							poster: "img/albums/thumb/javlaranamma_paasiainen.jpg"
+						},
+						{
+							pos: "131",
+							id: "35",
+							name: "Hennes fine Jesus",
+							album: "Skinkankare",
+							year: "1995",
+							mp3: "tracks/1995_skinkankare/mp3/16_javlaranamma_hennes_fine_jesus.mp3",
+							oga: "tracks/1995_skinkankare/ogg/16_javlaranamma_hennes_fine_jesus.ogg",
+							poster: "img/albums/thumb/javlaranamma_skinkankare.jpg"
+						},
+						{
+							pos: "132",
+							id: "114",
+							name: "Ballerinakjolen",
+							album: "&Auml;lskade G&ouml;teborg",
+							year: "2008",
+							mp3: "tracks/2008_alskade_goteborg/mp3/06_javlaranamma_ballerinakjolen.mp3",
+							oga: "tracks/2008_alskade_goteborg/ogg/06_javlaranamma_ballerinakjolen.ogg",
+							poster: "img/albums/thumb/javlaranamma_alskadegoteborg.jpg"
+						},
+						{
+							pos: "133",
+							id: "76",
+							name: "H&aring;rd i Lille Skutt",
+							album: "Fin i kanten",
+							year: "1999",
+							mp3: "tracks/1999_fin_i_kanten/mp3/12_javlaranamma_hard_i_lille_skutt.mp3",
+							oga: "tracks/1999_fin_i_kanten/ogg/12_javlaranamma_hard_i_lille_skutt.ogg",
+							poster: "img/albums/thumb/javlaranamma_finikanten.jpg"
+						},
+						{
+							pos: "134",
+							id: "28",
+							name: "Tv&aring; kategorier",
+							album: "Skinkankare",
+							year: "1995",
+							mp3: "tracks/1995_skinkankare/mp3/09_javlaranamma_tva_kategorier.mp3",
+							oga: "tracks/1995_skinkankare/ogg/09_javlaranamma_tva_kategorier.ogg",
+							poster: "img/albums/thumb/javlaranamma_skinkankare.jpg"
+						},
+						{
+							pos: "135",
+							id: "58",
+							name: "The power of love (Kalles solokarri&auml;r)",
+							album: "50 &aring;r",
+							year: "1997",
+							mp3: "tracks/1997_50_ar/mp3/18_javlaranamma_the_power_of_love.mp3",
+							oga: "tracks/1997_50_ar/ogg/18_javlaranamma_the_power_of_love.ogg",
+							poster: "img/albums/thumb/javlaranamma_50ar.jpg"
+						},
+						{
+							pos: "136",
+							id: "68",
+							name: "Jag g&ouml;r vad som helst f&ouml;r dig",
+							album: "Fin i kanten",
+							year: "1999",
+							mp3: "tracks/1999_fin_i_kanten/mp3/04_javlaranamma_jag_gor_vad_som_helst_for_dig.mp3",
+							oga: "tracks/1999_fin_i_kanten/ogg/04_javlaranamma_jag_gor_vad_som_helst_for_dig.ogg",
+							poster: "img/albums/thumb/javlaranamma_finikanten.jpg"
+						},
+						{
+							pos: "137",
+							id: "53",
+							name: "Waldorfdocka",
+							album: "50 &aring;r",
+							year: "1997",
+							mp3: "tracks/1997_50_ar/mp3/13_javlaranamma_waldorfdocka.mp3",
+							oga: "tracks/1997_50_ar/ogg/13_javlaranamma_waldorfdocka.ogg",
+							poster: "img/albums/thumb/javlaranamma_50ar.jpg"
+						},
+						{
+							pos: "138",
+							id: "138",
+							name: "Windows 7",
+							album: "Titiyopaketet",
+							year: "2012",
+							mp3: "tracks/2012_titiyopaketet/mp3/01_javlaranamma_windows_7.mp3",
+							oga: "tracks/2012_titiyopaketet/ogg/01_javlaranamma_windows_7.ogg",
+							poster: "img/albums/thumb/javlaranamma.jpg"
+						},
+						{
+							pos: "139",
+							id: "128",
+							name: "Anammaresor",
+							album: "Hemma &auml;r b&auml;st",
+							year: "2011",
+							mp3: "tracks/2011_hemma_ar_bast/mp3/01_anammaresor_anammaresor.mp3",
+							oga: "tracks/2011_hemma_ar_bast/ogg/01_anammaresor_anammaresor.ogg",
+							poster: "img/albums/thumb/anammaresor_hemmaarbast.jpg"
+						},
+						{
+							pos: "140",
+							id: "108",
+							name: "Kinesen med huvudet bakofram och lammet som hade en pistol (kom. sp&aring;r)",
+							album: "Kinesen med huvudet bakofram",
+							year: "2004",
+							mp3: "tracks/2004_kinesen_med_huvudet_bakofram/mp3/03_javlaranamma_kinesen_med_huvudet_bakofram_och_lammet_som_hade_en_pistol_kommentatorspar.mp3",
+							oga: "tracks/2004_kinesen_med_huvudet_bakofram/ogg/03_javlaranamma_kinesen_med_huvudet_bakofram_och_lammet_som_hade_en_pistol_kommentatorspar.ogg",
+							poster: "img/albums/thumb/javlaranamma.jpg"
+						},
+						{
+							pos: "141",
+							id: "99",
+							name: "Kostar att ligga p&aring; topp",
+							album: "Det b&auml;sta fr&aring;n TV-serien",
+							year: "2000",
+							mp3: "tracks/2000_det_basta_fran_tv-serien/mp3/10_robinson-jorgen_jesu_pojk_kostar_att_ligga_pa_topp.mp3",
+							oga: "tracks/2000_det_basta_fran_tv-serien/ogg/10_robinson-jorgen_jesu_pojk_kostar_att_ligga_pa_topp.ogg",
+							poster: "img/albums/thumb/javlaranamma.jpg"
+						},
+						{
+							pos: "142",
+							id: "103",
+							name: "Skinn p&aring; n&auml;san",
+							album: "Det b&auml;sta fr&aring;n TV-serien",
+							year: "2000",
+							mp3: "tracks/2000_det_basta_fran_tv-serien/mp3/14_robinson-jorgen_jesu_pojk_skinn_pa_nasan.mp3",
+							oga: "tracks/2000_det_basta_fran_tv-serien/ogg/14_robinson-jorgen_jesu_pojk_skinn_pa_nasan.ogg",
+							poster: "img/albums/thumb/javlaranamma.jpg"
+						}
+					], {
+						ready: function() {
+							mediaPlaylist.displayPlaylist();
+							mediaPlaylist.playlistInit(true); // Parameter is a boolean for autoplay.
+						},
+						ended: function() {
+							mediaPlaylist.playlistNext();
+						},
+						swfPath: "js",
+						supplied: "oga, mp3"
+					});
+				});
+			//]]>
+		</script>
+	</head>
+	<body>
+		<div id="jaBanner">
+			<a href="http://www.javlaranamma.nu">
+				<img src="img/ja_banner.png" class="jaBanner" />
+			</a>
+		</div>
+		<div id="header">
+			<div id="headerLeft"></div>
+			<div id="headerRight">
+				<div id="playerTop">
+					<div id="dropdownBox">
+						<img id="playPic" src="img/void.png" alt="" />
+						<h4 id="playTitle"></h4>
+						<h5 id="playAlbum"></h5>
+					</div>
+				</div>
+				<div id="playerButtons">
+					<div class="jp-audio" style="clear: both;">
+						<div class="jp-type-playlist">
+							<div id="jquery_jplayer_1" class="jp-jplayer"></div>
+							<div id="jp_interface_1" class="jp-interface">
+								<ul class="jp-controls">
+									<li><a href="#" class="jp-play" tabindex="1">play</a></li>
+									<li><a href="#" class="jp-pause" tabindex="1">pause</a></li>
+									<li><a href="#" class="jp-stop" tabindex="1">stop</a></li>
+									<li><a href="#" class="jp-mute" tabindex="1">mute</a></li>
+									<li><a href="#" class="jp-unmute" tabindex="1">unmute</a></li>
+									<li><a href="#" class="jp-previous" tabindex="1">previous</a></li>
+									<li><a href="#" class="jp-next" tabindex="1">next</a></li>
+								</ul>
+								<div class="jp-progress">
+									<div class="jp-seek-bar">
+										<div class="jp-play-bar"></div>
+									</div>
+								</div>
+								<div class="jp-volume-bar">
+									<div class="jp-volume-bar-value"></div>
+								</div>
+								<div class="jp-time">
+									<div class="jp-current-time"></div>
+									<div class="jp-slash">&nbsp;/&nbsp;</div>
+									<div class="jp-duration"></div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div id="playerBottom"></div>
+				</div>
+			</div>
+		<div id="page">
+			<div id="formBox">
+				<div id="albumChange">
+					<select id="albumSelect">
+						<option selected="selected" value="0">Alla låtar</option>
+						<option value="1">Falmskärm (1988)</option>
+						<option value="2">Skinkankare (1995)</option>
+						<option value="3">Hajbymania (ännu en julskiva) (1996)</option>
+						<option value="4">50 år (1997)</option>
+						<option value="5">Max 1,5% sväng (1998)</option>
+						<option value="6">Fin i kanten (1999)</option>
+						<option value="7">Det bästa från TV-serien (2000)</option>
+						<option value="8">Kinesen med huvudet bakofram (2004)</option>
+						<option value="9">Älskade Göteborg (2008)</option>
+						<option value="10">1982 (2010)</option>
+						<option value="11">Merry Påskmas (2011)</option>
+						<option value="12">Hemma är bäst (2011)</option>
+						<option value="13">Moses Christ Superstar (2012)</option>
+						<option value="14">Titiyopaketet (2012)</option>
+						<option value="15">Devils Enema (2013)</option>
+					</select>
+				</div>
+				<div id="tracksFilter">
+					<input type="text" id="tracksInput" name="tracksInput" />
+				</div>
+			</div>
+			<script type="text/javascript">
+				$("#albumSelect").change(function() {
+					var albumSelect = $("#albumSelect :selected").val();
+					
+					window.location.replace("?a=" + albumSelect);
+				});
+			</script>
+			<div id="playlistBox" style="clear: both;">
+				<div id="albumInfo">
+					<a href=""><img class="albumPicture" src="img/albums/javlaranamma_falmskarm.jpg" alt="Falmskärm" /></a>
+					<a href=""><img class="albumPicture" src="img/albums/javlaranamma_skinkankare.jpg" alt="Skinkankare" /></a>
+					<a href=""><img class="albumPicture" src="img/albums/javlaranamma_hajbymania.jpg" alt="Hajbymania (ännu en julskiva)" /></a>
+					<a href=""><img class="albumPicture" src="img/albums/javlaranamma_50ar.jpg" alt="50 år" /></a>
+					<a href=""><img class="albumPicture" src="img/albums/javlaranamma_max15svang.jpg" alt="Max 1,5% sväng" /></a>
+					<a href=""><img class="albumPicture" src="img/albums/javlaranamma_finikanten.jpg" alt="Fin i kanten" /></a>
+					<a href=""><img class="albumPicture" src="img/albums/javlaranamma.jpg" alt="Det bästa från TV-serien" /></a>
+					<a href=""><img class="albumPicture" src="img/albums/javlaranamma.jpg" alt="Kinesen med huvudet bakofram" /></a>
+					<a href=""><img class="albumPicture" src="img/albums/javlaranamma_alskadegoteborg.jpg" alt="Älskade Göteborg" /></a>
+					<a href=""><img class="albumPicture" src="img/albums/javlaranamma.jpg" alt="1982" /></a>
+					<a href=""><img class="albumPicture" src="img/albums/javlaranamma_paasiainen.jpg" alt="Merry Påskmas" /></a>
+					<a href=""><img class="albumPicture" src="img/albums/anammaresor_hemmaarbast.jpg" alt="Hemma är bäst" /></a>
+					<a href=""><img class="albumPicture" src="img/albums/javlaranamma.jpg" alt="Moses Christ Superstar" /></a>
+					<a href=""><img class="albumPicture" src="img/albums/javlaranamma.jpg" alt="Titiyopaketet" /></a>
+					<a href=""><img class="albumPicture" src="img/albums/javlaranamma.jpg" alt="Devils Enema" /></a>
+					<br style="clear: both;" />
+				</div>
+				<table id="playlistTable">
+					<thead>
+						<tr>
+							<td class="playlistTop1">#</td>
+							<td class="playlistTop2">Titel</td>
+							<td class="playlistTop3">Artist</td>
+							<td class="playlistTop4">Album</td>
+							<td class="playlistTop5">&Aring;r</td>
+						</tr>
+					</thead>
+					<tbody>
+					<tr class="playlistRow" id="jp_playlist_1_item_25">
+						<td class="playlistCell1">1</td>
+						<td class="playlistCell2">J&auml;vlaranammas marsch</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Falmsk&auml;rm</td>
+						<td class="playlistCell5">1988</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_98">
+						<td class="playlistCell1">2</td>
+						<td class="playlistCell2">Irmeli</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Falmsk&auml;rm</td>
+						<td class="playlistCell5">1988</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_119">
+						<td class="playlistCell1">3</td>
+						<td class="playlistCell2">Fyllefloskler</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Falmsk&auml;rm</td>
+						<td class="playlistCell5">1988</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_22">
+						<td class="playlistCell1">4</td>
+						<td class="playlistCell2">S&auml;kert som amen</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Falmsk&auml;rm</td>
+						<td class="playlistCell5">1988</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_29">
+						<td class="playlistCell1">5</td>
+						<td class="playlistCell2">Din syrra</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Falmsk&auml;rm</td>
+						<td class="playlistCell5">1988</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_85">
+						<td class="playlistCell1">6</td>
+						<td class="playlistCell2">Flong nya loafers</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Falmsk&auml;rm</td>
+						<td class="playlistCell5">1988</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_24">
+						<td class="playlistCell1">7</td>
+						<td class="playlistCell2">Gl&ouml;m Glenn-&Aring;ke (Gl&ouml;m Glenn)</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Falmsk&auml;rm</td>
+						<td class="playlistCell5">1988</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_26">
+						<td class="playlistCell1">8</td>
+						<td class="playlistCell2">Pickadulverman</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Falmsk&auml;rm</td>
+						<td class="playlistCell5">1988</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_57">
+						<td class="playlistCell1">9</td>
+						<td class="playlistCell2">Teach me tiger</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Falmsk&auml;rm</td>
+						<td class="playlistCell5">1988</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_47">
+						<td class="playlistCell1">10</td>
+						<td class="playlistCell2">Fina fisken</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Falmsk&auml;rm</td>
+						<td class="playlistCell5">1988</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_72">
+						<td class="playlistCell1">11</td>
+						<td class="playlistCell2">Haspelsp&ouml;t</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Falmsk&auml;rm</td>
+						<td class="playlistCell5">1988</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_69">
+						<td class="playlistCell1">12</td>
+						<td class="playlistCell2">Raka r&ouml;r</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Falmsk&auml;rm</td>
+						<td class="playlistCell5">1988</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_120">
+						<td class="playlistCell1">13</td>
+						<td class="playlistCell2">H&auml;sttransporten</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Falmsk&auml;rm</td>
+						<td class="playlistCell5">1988</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_116">
+						<td class="playlistCell1">14</td>
+						<td class="playlistCell2">Fr&aring;n far till son</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Falmsk&auml;rm</td>
+						<td class="playlistCell5">1988</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_73">
+						<td class="playlistCell1">15</td>
+						<td class="playlistCell2">L&ouml;</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Falmsk&auml;rm</td>
+						<td class="playlistCell5">1988</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_6">
+						<td class="playlistCell1">16</td>
+						<td class="playlistCell2">R&auml;v bakom &ouml;rat</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Falmsk&auml;rm</td>
+						<td class="playlistCell5">1988</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_97">
+						<td class="playlistCell1">17</td>
+						<td class="playlistCell2">Boots mot pung</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Falmsk&auml;rm</td>
+						<td class="playlistCell5">1988</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_39">
+						<td class="playlistCell1">18</td>
+						<td class="playlistCell2">(Den f&ouml;rskr&auml;ckliga historien om) Molly Broline</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Falmsk&auml;rm</td>
+						<td class="playlistCell5">1988</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_36">
+						<td class="playlistCell1">19</td>
+						<td class="playlistCell2">Fram me chipsen pojkar</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Falmsk&auml;rm</td>
+						<td class="playlistCell5">1988</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_61">
+						<td class="playlistCell1">20</td>
+						<td class="playlistCell2">P&aring; m&aring;ndan</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Skinkankare</td>
+						<td class="playlistCell5">1995</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_50">
+						<td class="playlistCell1">21</td>
+						<td class="playlistCell2">K&auml;lek</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Skinkankare</td>
+						<td class="playlistCell5">1995</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_67">
+						<td class="playlistCell1">22</td>
+						<td class="playlistCell2">Idioten</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Skinkankare</td>
+						<td class="playlistCell5">1995</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_35">
+						<td class="playlistCell1">23</td>
+						<td class="playlistCell2">G&auml;ngdans</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Skinkankare</td>
+						<td class="playlistCell5">1995</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_115">
+						<td class="playlistCell1">24</td>
+						<td class="playlistCell2">Rioja-Bambar</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Skinkankare</td>
+						<td class="playlistCell5">1995</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_44">
+						<td class="playlistCell1">25</td>
+						<td class="playlistCell2">Kullamannen</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Skinkankare</td>
+						<td class="playlistCell5">1995</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_0">
+						<td class="playlistCell1">26</td>
+						<td class="playlistCell2">Indiankillen - discots skr&auml;ck</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Skinkankare</td>
+						<td class="playlistCell5">1995</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_28">
+						<td class="playlistCell1">27</td>
+						<td class="playlistCell2">Jack Danielsshorts</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Skinkankare</td>
+						<td class="playlistCell5">1995</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_134">
+						<td class="playlistCell1">28</td>
+						<td class="playlistCell2">Tv&aring; kategorier</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Skinkankare</td>
+						<td class="playlistCell5">1995</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_10">
+						<td class="playlistCell1">29</td>
+						<td class="playlistCell2">Undan grabbar</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Skinkankare</td>
+						<td class="playlistCell5">1995</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_65">
+						<td class="playlistCell1">30</td>
+						<td class="playlistCell2">Bara vi</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Skinkankare</td>
+						<td class="playlistCell5">1995</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_1">
+						<td class="playlistCell1">31</td>
+						<td class="playlistCell2">L&aring;ng f&auml;rds natt mot dag</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Skinkankare</td>
+						<td class="playlistCell5">1995</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_109">
+						<td class="playlistCell1">32</td>
+						<td class="playlistCell2">Kent</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Skinkankare</td>
+						<td class="playlistCell5">1995</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_107">
+						<td class="playlistCell1">33</td>
+						<td class="playlistCell2">K&auml;th</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Skinkankare</td>
+						<td class="playlistCell5">1995</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_64">
+						<td class="playlistCell1">34</td>
+						<td class="playlistCell2">Ta mig p&aring; grejen</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Skinkankare</td>
+						<td class="playlistCell5">1995</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_131">
+						<td class="playlistCell1">35</td>
+						<td class="playlistCell2">Hennes fine Jesus</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Skinkankare</td>
+						<td class="playlistCell5">1995</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_23">
+						<td class="playlistCell1">36</td>
+						<td class="playlistCell2">Stellan, Staffan, J&ouml;rgen, Kalle och Tom (Prebens r&aring;d)</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Hajbymania (&auml;nnu en julskiva)</td>
+						<td class="playlistCell5">1996</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_14">
+						<td class="playlistCell1">37</td>
+						<td class="playlistCell2">&Auml;nnu en l&aring;t (riktiga killar)</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Hajbymania (&auml;nnu en julskiva)</td>
+						<td class="playlistCell5">1996</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_5">
+						<td class="playlistCell1">38</td>
+						<td class="playlistCell2">A Christer carol</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Hajbymania (&auml;nnu en julskiva)</td>
+						<td class="playlistCell5">1996</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_118">
+						<td class="playlistCell1">39</td>
+						<td class="playlistCell2">Denna sida upp (sp&auml;nna p&aring;)</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Hajbymania (&auml;nnu en julskiva)</td>
+						<td class="playlistCell5">1996</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_3">
+						<td class="playlistCell1">40</td>
+						<td class="playlistCell2">&Aring; s&aring; en l&aring;t till (om vi hinner spela in den) (Hajbymania)</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Hajbymania (&auml;nnu en julskiva)</td>
+						<td class="playlistCell5">1996</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_92">
+						<td class="playlistCell1">41</td>
+						<td class="playlistCell2">Karneval i stan</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">50 &aring;r</td>
+						<td class="playlistCell5">1997</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_12">
+						<td class="playlistCell1">42</td>
+						<td class="playlistCell2">En grape r&auml;tt upp</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">50 &aring;r</td>
+						<td class="playlistCell5">1997</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_62">
+						<td class="playlistCell1">43</td>
+						<td class="playlistCell2">Angelique Wiklunds boxer</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">50 &aring;r</td>
+						<td class="playlistCell5">1997</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_129">
+						<td class="playlistCell1">44</td>
+						<td class="playlistCell2">L&auml;gg ner den bruden</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">50 &aring;r</td>
+						<td class="playlistCell5">1997</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_20">
+						<td class="playlistCell1">45</td>
+						<td class="playlistCell2">En fyllegrej</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">50 &aring;r</td>
+						<td class="playlistCell5">1997</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_8">
+						<td class="playlistCell1">46</td>
+						<td class="playlistCell2">Fel h&auml;st</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">50 &aring;r</td>
+						<td class="playlistCell5">1997</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_112">
+						<td class="playlistCell1">47</td>
+						<td class="playlistCell2">Surt sa r&auml;ven</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">50 &aring;r</td>
+						<td class="playlistCell5">1997</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_102">
+						<td class="playlistCell1">48</td>
+						<td class="playlistCell2">&Auml;ntligen m&aring;ndag</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">50 &aring;r</td>
+						<td class="playlistCell5">1997</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_38">
+						<td class="playlistCell1">49</td>
+						<td class="playlistCell2">Bernts salonger (flickan med den tjocka s&aring;sen)</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">50 &aring;r</td>
+						<td class="playlistCell5">1997</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_11">
+						<td class="playlistCell1">50</td>
+						<td class="playlistCell2">Pingistr&auml;narens jacka</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">50 &aring;r</td>
+						<td class="playlistCell5">1997</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_81">
+						<td class="playlistCell1">51</td>
+						<td class="playlistCell2">Det blir v&auml;rst f&ouml;r dig, min v&auml;n</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">50 &aring;r</td>
+						<td class="playlistCell5">1997</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_76">
+						<td class="playlistCell1">52</td>
+						<td class="playlistCell2">L&auml;gg mig vid elementet</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">50 &aring;r</td>
+						<td class="playlistCell5">1997</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_137">
+						<td class="playlistCell1">53</td>
+						<td class="playlistCell2">Waldorfdocka</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">50 &aring;r</td>
+						<td class="playlistCell5">1997</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_34">
+						<td class="playlistCell1">54</td>
+						<td class="playlistCell2">Hur fan skall jag h&auml;vda mig nu? (hur ska jag klara mig nu?)</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">50 &aring;r</td>
+						<td class="playlistCell5">1997</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_30">
+						<td class="playlistCell1">55</td>
+						<td class="playlistCell2">Tr&ouml;tt och spytt (ode till gasquen)</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">50 &aring;r</td>
+						<td class="playlistCell5">1997</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_54">
+						<td class="playlistCell1">56</td>
+						<td class="playlistCell2">En sorglig historia</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">50 &aring;r</td>
+						<td class="playlistCell5">1997</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_31">
+						<td class="playlistCell1">57</td>
+						<td class="playlistCell2">The king of the sittring (Kalles solokarri&auml;r)</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">50 &aring;r</td>
+						<td class="playlistCell5">1997</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_135">
+						<td class="playlistCell1">58</td>
+						<td class="playlistCell2">The power of love (Kalles solokarri&auml;r)</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">50 &aring;r</td>
+						<td class="playlistCell5">1997</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_9">
+						<td class="playlistCell1">59</td>
+						<td class="playlistCell2">Tv&aring; och en halv kalv (Kalles solokarri&auml;r)</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">50 &aring;r</td>
+						<td class="playlistCell5">1997</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_60">
+						<td class="playlistCell1">60</td>
+						<td class="playlistCell2">Vad t&auml;nkte jag p&aring;?</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Max 1,5% sv&auml;ng</td>
+						<td class="playlistCell5">1998</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_121">
+						<td class="playlistCell1">61</td>
+						<td class="playlistCell2">Morgan bl&aring;vitt</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Max 1,5% sv&auml;ng</td>
+						<td class="playlistCell5">1998</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_2">
+						<td class="playlistCell1">62</td>
+						<td class="playlistCell2">En m&aring;lgestm&auml;stares uppg&aring;ng och fall</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Max 1,5% sv&auml;ng</td>
+						<td class="playlistCell5">1998</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_82">
+						<td class="playlistCell1">63</td>
+						<td class="playlistCell2">Inte gr&ouml;na f&auml;ltets schack</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Max 1,5% sv&auml;ng</td>
+						<td class="playlistCell5">1998</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_93">
+						<td class="playlistCell1">64</td>
+						<td class="playlistCell2">Ren pur k&auml;rlek</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Max 1,5% sv&auml;ng</td>
+						<td class="playlistCell5">1998</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_78">
+						<td class="playlistCell1">65</td>
+						<td class="playlistCell2">J&auml;vlaranammas credo (intro)</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Fin i kanten</td>
+						<td class="playlistCell5">1999</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_105">
+						<td class="playlistCell1">66</td>
+						<td class="playlistCell2">J&auml;vlaranammas credo (fulla, fattiga och feta)</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Fin i kanten</td>
+						<td class="playlistCell5">1999</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_4">
+						<td class="playlistCell1">67</td>
+						<td class="playlistCell2">De var v&auml;l trevligt</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Fin i kanten</td>
+						<td class="playlistCell5">1999</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_136">
+						<td class="playlistCell1">68</td>
+						<td class="playlistCell2">Jag g&ouml;r vad som helst f&ouml;r dig</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Fin i kanten</td>
+						<td class="playlistCell5">1999</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_94">
+						<td class="playlistCell1">69</td>
+						<td class="playlistCell2">Marie i rummet</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Fin i kanten</td>
+						<td class="playlistCell5">1999</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_53">
+						<td class="playlistCell1">70</td>
+						<td class="playlistCell2">Den sj&auml;lvklara l&ouml;sningen</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Fin i kanten</td>
+						<td class="playlistCell5">1999</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_127">
+						<td class="playlistCell1">71</td>
+						<td class="playlistCell2">S&auml;g inget Susanne</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Fin i kanten</td>
+						<td class="playlistCell5">1999</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_42">
+						<td class="playlistCell1">72</td>
+						<td class="playlistCell2">Tre franska gar&ccedil;ons (featuring Fletch)</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Fin i kanten</td>
+						<td class="playlistCell5">1999</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_106">
+						<td class="playlistCell1">73</td>
+						<td class="playlistCell2">Min tjej &auml;r piggelin</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Fin i kanten</td>
+						<td class="playlistCell5">1999</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_126">
+						<td class="playlistCell1">74</td>
+						<td class="playlistCell2">I Sparrings ungdom</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Fin i kanten</td>
+						<td class="playlistCell5">1999</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_15">
+						<td class="playlistCell1">75</td>
+						<td class="playlistCell2">Ode till en v&auml;n</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Fin i kanten</td>
+						<td class="playlistCell5">1999</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_133">
+						<td class="playlistCell1">76</td>
+						<td class="playlistCell2">H&aring;rd i Lille Skutt</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Fin i kanten</td>
+						<td class="playlistCell5">1999</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_41">
+						<td class="playlistCell1">77</td>
+						<td class="playlistCell2">Filosofens hammare och tv&aring; f&ouml;r en i baren</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Fin i kanten</td>
+						<td class="playlistCell5">1999</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_87">
+						<td class="playlistCell1">78</td>
+						<td class="playlistCell2">Anette</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Fin i kanten</td>
+						<td class="playlistCell5">1999</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_19">
+						<td class="playlistCell1">79</td>
+						<td class="playlistCell2">Stellans visa</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Fin i kanten</td>
+						<td class="playlistCell5">1999</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_122">
+						<td class="playlistCell1">80</td>
+						<td class="playlistCell2">Solen g&aring;r ner</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Fin i kanten</td>
+						<td class="playlistCell5">1999</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_125">
+						<td class="playlistCell1">81</td>
+						<td class="playlistCell2">Tjejbacillen</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Fin i kanten</td>
+						<td class="playlistCell5">1999</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_110">
+						<td class="playlistCell1">82</td>
+						<td class="playlistCell2">En vecka att bara l&aring;ta g&aring;</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Fin i kanten</td>
+						<td class="playlistCell5">1999</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_27">
+						<td class="playlistCell1">83</td>
+						<td class="playlistCell2">Jag ligger i hallen</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Fin i kanten</td>
+						<td class="playlistCell5">1999</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_96">
+						<td class="playlistCell1">84</td>
+						<td class="playlistCell2">Hale bale</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Fin i kanten</td>
+						<td class="playlistCell5">1999</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_111">
+						<td class="playlistCell1">85</td>
+						<td class="playlistCell2">Stryk p&aring; Dancin' Dingo</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Fin i kanten</td>
+						<td class="playlistCell5">1999</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_114">
+						<td class="playlistCell1">86</td>
+						<td class="playlistCell2">Alla killars dans</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Fin i kanten</td>
+						<td class="playlistCell5">1999</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_99">
+						<td class="playlistCell1">87</td>
+						<td class="playlistCell2">J&auml;vlaranammas sittningsvisa</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Fin i kanten</td>
+						<td class="playlistCell5">1999</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_7">
+						<td class="playlistCell1">88</td>
+						<td class="playlistCell2">M&auml;nniskans b&auml;ste v&auml;n (bonus)</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Fin i kanten</td>
+						<td class="playlistCell5">1999</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_16">
+						<td class="playlistCell1">89</td>
+						<td class="playlistCell2">Min tjej &auml;r piggelin (tysk version) (bonus)</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Fin i kanten</td>
+						<td class="playlistCell5">1999</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_63">
+						<td class="playlistCell1">90</td>
+						<td class="playlistCell2">Helk&aring;t melodi</td>
+						<td class="playlistCell3">Robinsson-J&ouml;rgen och Jesu P&ocirc;jk</td>
+						<td class="playlistCell4">Det b&auml;sta fr&aring;n TV-serien</td>
+						<td class="playlistCell5">2000</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_113">
+						<td class="playlistCell1">91</td>
+						<td class="playlistCell2">Sven (v&auml;rldens tjockaste jockey)</td>
+						<td class="playlistCell3">Robinsson-J&ouml;rgen och Jesu P&ocirc;jk</td>
+						<td class="playlistCell4">Det b&auml;sta fr&aring;n TV-serien</td>
+						<td class="playlistCell5">2000</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_86">
+						<td class="playlistCell1">92</td>
+						<td class="playlistCell2">L&aring;t mig d&ouml;</td>
+						<td class="playlistCell3">Robinsson-J&ouml;rgen och Jesu P&ocirc;jk</td>
+						<td class="playlistCell4">Det b&auml;sta fr&aring;n TV-serien</td>
+						<td class="playlistCell5">2000</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_75">
+						<td class="playlistCell1">93</td>
+						<td class="playlistCell2">Alla &auml;r lika bra</td>
+						<td class="playlistCell3">Robinsson-J&ouml;rgen och Jesu P&ocirc;jk</td>
+						<td class="playlistCell4">Det b&auml;sta fr&aring;n TV-serien</td>
+						<td class="playlistCell5">2000</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_124">
+						<td class="playlistCell1">94</td>
+						<td class="playlistCell2">Ett varningens ord</td>
+						<td class="playlistCell3">Robinsson-J&ouml;rgen och Jesu P&ocirc;jk</td>
+						<td class="playlistCell4">Det b&auml;sta fr&aring;n TV-serien</td>
+						<td class="playlistCell5">2000</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_108">
+						<td class="playlistCell1">95</td>
+						<td class="playlistCell2">S&aring;d&auml;r n&auml;r man &auml;r k&auml;r</td>
+						<td class="playlistCell3">Robinsson-J&ouml;rgen och Jesu P&ocirc;jk</td>
+						<td class="playlistCell4">Det b&auml;sta fr&aring;n TV-serien</td>
+						<td class="playlistCell5">2000</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_21">
+						<td class="playlistCell1">96</td>
+						<td class="playlistCell2">En f&ouml;rtrollad kv&auml;ll</td>
+						<td class="playlistCell3">Robinsson-J&ouml;rgen och Jesu P&ocirc;jk</td>
+						<td class="playlistCell4">Det b&auml;sta fr&aring;n TV-serien</td>
+						<td class="playlistCell5">2000</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_68">
+						<td class="playlistCell1">97</td>
+						<td class="playlistCell2">H&aring;rd idag</td>
+						<td class="playlistCell3">Robinsson-J&ouml;rgen och Jesu P&ocirc;jk</td>
+						<td class="playlistCell4">Det b&auml;sta fr&aring;n TV-serien</td>
+						<td class="playlistCell5">2000</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_128">
+						<td class="playlistCell1">98</td>
+						<td class="playlistCell2">Plockad av snuten</td>
+						<td class="playlistCell3">Robinsson-J&ouml;rgen och Jesu P&ocirc;jk</td>
+						<td class="playlistCell4">Det b&auml;sta fr&aring;n TV-serien</td>
+						<td class="playlistCell5">2000</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_141">
+						<td class="playlistCell1">99</td>
+						<td class="playlistCell2">Kostar att ligga p&aring; topp</td>
+						<td class="playlistCell3">Robinsson-J&ouml;rgen och Jesu P&ocirc;jk</td>
+						<td class="playlistCell4">Det b&auml;sta fr&aring;n TV-serien</td>
+						<td class="playlistCell5">2000</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_45">
+						<td class="playlistCell1">100</td>
+						<td class="playlistCell2">All time loser</td>
+						<td class="playlistCell3">Robinsson-J&ouml;rgen och Jesu P&ocirc;jk</td>
+						<td class="playlistCell4">Det b&auml;sta fr&aring;n TV-serien</td>
+						<td class="playlistCell5">2000</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_79">
+						<td class="playlistCell1">101</td>
+						<td class="playlistCell2">Ibland skv&auml;tter det</td>
+						<td class="playlistCell3">Robinsson-J&ouml;rgen och Jesu P&ocirc;jk</td>
+						<td class="playlistCell4">Det b&auml;sta fr&aring;n TV-serien</td>
+						<td class="playlistCell5">2000</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_104">
+						<td class="playlistCell1">102</td>
+						<td class="playlistCell2">Tjillevipp</td>
+						<td class="playlistCell3">Robinsson-J&ouml;rgen och Jesu P&ocirc;jk</td>
+						<td class="playlistCell4">Det b&auml;sta fr&aring;n TV-serien</td>
+						<td class="playlistCell5">2000</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_142">
+						<td class="playlistCell1">103</td>
+						<td class="playlistCell2">Skinn p&aring; n&auml;san</td>
+						<td class="playlistCell3">Robinsson-J&ouml;rgen och Jesu P&ocirc;jk</td>
+						<td class="playlistCell4">Det b&auml;sta fr&aring;n TV-serien</td>
+						<td class="playlistCell5">2000</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_123">
+						<td class="playlistCell1">104</td>
+						<td class="playlistCell2">Barnfabriken</td>
+						<td class="playlistCell3">Robinsson-J&ouml;rgen och Jesu P&ocirc;jk</td>
+						<td class="playlistCell4">Det b&auml;sta fr&aring;n TV-serien</td>
+						<td class="playlistCell5">2000</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_37">
+						<td class="playlistCell1">105</td>
+						<td class="playlistCell2">Allt gick fel f&ouml;r Dennis</td>
+						<td class="playlistCell3">Robinsson-J&ouml;rgen och Jesu P&ocirc;jk</td>
+						<td class="playlistCell4">Det b&auml;sta fr&aring;n TV-serien</td>
+						<td class="playlistCell5">2000</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_90">
+						<td class="playlistCell1">106</td>
+						<td class="playlistCell2">Kinesen med huvudet bakofram och lammet som hade en pistol</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Kinesen med huvudet bakofram</td>
+						<td class="playlistCell5">2004</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_55">
+						<td class="playlistCell1">107</td>
+						<td class="playlistCell2">Kinesen med huvudet bakofram och lammet som hade en pistol (remix)</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Kinesen med huvudet bakofram</td>
+						<td class="playlistCell5">2004</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_140">
+						<td class="playlistCell1">108</td>
+						<td class="playlistCell2">Kinesen med huvudet bakofram och lammet som hade en pistol (kom. sp&aring;r)</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Kinesen med huvudet bakofram</td>
+						<td class="playlistCell5">2004</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_117">
+						<td class="playlistCell1">109</td>
+						<td class="playlistCell2">Dom &auml;r ledsna</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">&Auml;lskade G&ouml;teborg</td>
+						<td class="playlistCell5">2008</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_18">
+						<td class="playlistCell1">110</td>
+						<td class="playlistCell2">Sverige &auml;r ett avl&aring;ngt land</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">&Auml;lskade G&ouml;teborg</td>
+						<td class="playlistCell5">2008</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_17">
+						<td class="playlistCell1">111</td>
+						<td class="playlistCell2">Jazz!</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">&Auml;lskade G&ouml;teborg</td>
+						<td class="playlistCell5">2008</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_33">
+						<td class="playlistCell1">112</td>
+						<td class="playlistCell2">L&aring;t oss kalla det hyfs</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">&Auml;lskade G&ouml;teborg</td>
+						<td class="playlistCell5">2008</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_101">
+						<td class="playlistCell1">113</td>
+						<td class="playlistCell2">P&aring;satt av Chao-Li</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">&Auml;lskade G&ouml;teborg</td>
+						<td class="playlistCell5">2008</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_132">
+						<td class="playlistCell1">114</td>
+						<td class="playlistCell2">Ballerinakjolen</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">&Auml;lskade G&ouml;teborg</td>
+						<td class="playlistCell5">2008</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_52">
+						<td class="playlistCell1">115</td>
+						<td class="playlistCell2">Mylady</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">&Auml;lskade G&ouml;teborg</td>
+						<td class="playlistCell5">2008</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_13">
+						<td class="playlistCell1">116</td>
+						<td class="playlistCell2">Raka r&ouml;r - originalet</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">&Auml;lskade G&ouml;teborg</td>
+						<td class="playlistCell5">2008</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_48">
+						<td class="playlistCell1">117</td>
+						<td class="playlistCell2">1982</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">1982</td>
+						<td class="playlistCell5">2010</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_56">
+						<td class="playlistCell1">118</td>
+						<td class="playlistCell2">F&ouml;rtroendet</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">1982</td>
+						<td class="playlistCell5">2010</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_130">
+						<td class="playlistCell1">119</td>
+						<td class="playlistCell2">P&aring;skevangeliet</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Merry P&aring;skmas</td>
+						<td class="playlistCell5">2011</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_40">
+						<td class="playlistCell1">120</td>
+						<td class="playlistCell2">Upp och hoppa</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Merry P&aring;skmas</td>
+						<td class="playlistCell5">2011</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_95">
+						<td class="playlistCell1">121</td>
+						<td class="playlistCell2">G&aring; f&ouml;rbi</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Merry P&aring;skmas</td>
+						<td class="playlistCell5">2011</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_74">
+						<td class="playlistCell1">122</td>
+						<td class="playlistCell2">En extra ledig dag</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Merry P&aring;skmas</td>
+						<td class="playlistCell5">2011</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_84">
+						<td class="playlistCell1">123</td>
+						<td class="playlistCell2">Du t&auml;nker s&aring;, du</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Merry P&aring;skmas</td>
+						<td class="playlistCell5">2011</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_32">
+						<td class="playlistCell1">124</td>
+						<td class="playlistCell2">En femkrona stor</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Merry P&aring;skmas</td>
+						<td class="playlistCell5">2011</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_59">
+						<td class="playlistCell1">125</td>
+						<td class="playlistCell2">Inte en molekyl</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Merry P&aring;skmas</td>
+						<td class="playlistCell5">2011</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_46">
+						<td class="playlistCell1">126</td>
+						<td class="playlistCell2">R&auml;tt ut p&aring; bloggen</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Merry P&aring;skmas</td>
+						<td class="playlistCell5">2011</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_58">
+						<td class="playlistCell1">127</td>
+						<td class="playlistCell2">Bj&ouml;rnen och ejdern</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Merry P&aring;skmas</td>
+						<td class="playlistCell5">2011</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_139">
+						<td class="playlistCell1">128</td>
+						<td class="playlistCell2">Anammaresor</td>
+						<td class="playlistCell3">Anammaresor</td>
+						<td class="playlistCell4">Hemma &auml;r b&auml;st</td>
+						<td class="playlistCell5">2011</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_100">
+						<td class="playlistCell1">129</td>
+						<td class="playlistCell2">St&aring; upp!</td>
+						<td class="playlistCell3">Anammaresor</td>
+						<td class="playlistCell4">Hemma &auml;r b&auml;st</td>
+						<td class="playlistCell5">2011</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_83">
+						<td class="playlistCell1">130</td>
+						<td class="playlistCell2">Det finaste</td>
+						<td class="playlistCell3">Anammaresor</td>
+						<td class="playlistCell4">Hemma &auml;r b&auml;st</td>
+						<td class="playlistCell5">2011</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_89">
+						<td class="playlistCell1">131</td>
+						<td class="playlistCell2">Prio ett</td>
+						<td class="playlistCell3">Anammaresor</td>
+						<td class="playlistCell4">Hemma &auml;r b&auml;st</td>
+						<td class="playlistCell5">2011</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_66">
+						<td class="playlistCell1">132</td>
+						<td class="playlistCell2">Delfinerna</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Moses Christ Superstar</td>
+						<td class="playlistCell5">2012</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_49">
+						<td class="playlistCell1">133</td>
+						<td class="playlistCell2">Vinden viskar 'Jim'</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Moses Christ Superstar</td>
+						<td class="playlistCell5">2012</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_51">
+						<td class="playlistCell1">134</td>
+						<td class="playlistCell2">Flumsnack</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Moses Christ Superstar</td>
+						<td class="playlistCell5">2012</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_103">
+						<td class="playlistCell1">135</td>
+						<td class="playlistCell2">Trenne element</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Moses Christ Superstar</td>
+						<td class="playlistCell5">2012</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_80">
+						<td class="playlistCell1">136</td>
+						<td class="playlistCell2">The Pain</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Moses Christ Superstar</td>
+						<td class="playlistCell5">2012</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_77">
+						<td class="playlistCell1">137</td>
+						<td class="playlistCell2">Let my people go</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Moses Christ Superstar</td>
+						<td class="playlistCell5">2012</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_138">
+						<td class="playlistCell1">138</td>
+						<td class="playlistCell2">Windows 7</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Titiyopaketet</td>
+						<td class="playlistCell5">2012</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_43">
+						<td class="playlistCell1">139</td>
+						<td class="playlistCell2">Vi kan kolla p&aring; den sen</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Titiyopaketet</td>
+						<td class="playlistCell5">2012</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_71">
+						<td class="playlistCell1">140</td>
+						<td class="playlistCell2">Djerry</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Titiyopaketet</td>
+						<td class="playlistCell5">2012</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_88">
+						<td class="playlistCell1">141</td>
+						<td class="playlistCell2">Comme ci, Comme ca</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Titiyopaketet</td>
+						<td class="playlistCell5">2012</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_70">
+						<td class="playlistCell1">142</td>
+						<td class="playlistCell2">Up and Hop</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Devils Enema</td>
+						<td class="playlistCell5">2013</td>
+					</tr>
+					<tr class="playlistRow" id="jp_playlist_1_item_91">
+						<td class="playlistCell1">143</td>
+						<td class="playlistCell2">The finest thing</td>
+						<td class="playlistCell3">J&auml;vlaranamma</td>
+						<td class="playlistCell4">Devils Enema</td>
+						<td class="playlistCell5">2013</td>
+					</tr>
+					</tbody>
+				</table>
+				<script type="text/javascript">
+					$('input#tracksInput').quicksearch('tr.playlistRow', {selector: 'td.playlistCell2'});
+				</script>
+			</div>
+		</div>
+		<div id="footer">
+		<h5>All musik p&aring; sidan: &copy; <a href="http://www.javlaranamma.nu/">J&auml;vlaranamma</a> | Design och kod: <a href="http://www.facebook.com/ernstbernst/">Anders 'Ernst' Gidlund</a></h5>
+		</div>
+	</body>
+</html>
