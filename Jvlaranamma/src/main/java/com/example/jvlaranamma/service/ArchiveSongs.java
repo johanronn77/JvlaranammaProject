@@ -16,6 +16,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import static com.example.jvlaranamma.Constants.WEBURLTOANTLIGENMANDAG;
 
@@ -40,12 +41,17 @@ public class ArchiveSongs extends SerializableService<Set<Song>>{
     }
     public Song[] getSongs(final SongsLoaderAsyncTask.UpdateCallback updateCallback, final boolean fullRefresh) {
         String webContent = getWebContent(WEBURLTOANTLIGENMANDAG);
+        if(webContent.length()!=0){
+
+
+        }
 
         return null;
 
     }
     private String getWebContent(String URL){
         String resString;
+        boolean startAdding = false;
         try {
             HttpClient httpclient = new DefaultHttpClient(); // Create HTTP Client
             HttpGet httpget = new HttpGet(URL); // Set the action you want to do
@@ -55,8 +61,22 @@ public class ArchiveSongs extends SerializableService<Set<Song>>{
             BufferedReader reader = new BufferedReader(new InputStreamReader(is, "iso-8859-1"), 8);
             StringBuilder sb = new StringBuilder();
             String line = null;
-            while ((line = reader.readLine()) != null) // Read line by line
-                sb.append(line + "\n");
+            while ((line = reader.readLine()) != null){ // Read line by line
+                line = line.trim();
+                if(line.compareToIgnoreCase("var mediaPlaylist = new Playlist(\"1\", [")==0)   {
+                    startAdding = true;
+                }else{
+                    if(startAdding){
+                        if(line.compareToIgnoreCase("], {")==0){
+                            startAdding = false;
+                            break;
+                        }else{
+                            sb.append(line + "\n");
+                        }
+
+                    }
+                }
+            }
 
             resString = sb.toString(); // Result is here
             Log.i("string letta", resString);
