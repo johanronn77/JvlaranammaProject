@@ -165,11 +165,11 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
             }
             if(position==1)
             {
-                fragment=new songs();
+                //fragment=new songs();
             }
             if(position==2)
             {
-                fragment=new songs();
+                //fragment=new songs();
             }
             return fragment;
            // return PlaceholderFragment.newInstance(position + 1);

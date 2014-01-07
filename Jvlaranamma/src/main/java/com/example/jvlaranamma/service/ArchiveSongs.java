@@ -10,11 +10,18 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -27,6 +34,7 @@ public class ArchiveSongs extends SerializableService<Set<Song>>{
 
     private final static String songFileName = "songs";
     private static ArchiveSongs instance;
+    private Set<Song> songs = new HashSet<Song>();
 
     @Override
     public String getFilename() {
@@ -40,9 +48,30 @@ public class ArchiveSongs extends SerializableService<Set<Song>>{
         return instance;
     }
     public Song[] getSongs(final SongsLoaderAsyncTask.UpdateCallback updateCallback, final boolean fullRefresh) {
+        if (!songs.isEmpty() && !fullRefresh) {
+            return compileSongs();
+        }
+        JSONArray jsonSongs;
+        jsonSongs = null;
+
         String webContent = getWebContent(WEBURLTOANTLIGENMANDAG);
         if(webContent.length()!=0){
+            try {
+                jsonSongs = new JSONArray('['+webContent+']');
+                int len = jsonSongs.length();
+                for(int i = 0; i < len; ++i) {
+                    JSONObject obj = jsonSongs.getJSONObject(i);
+                    Song song = new Song(obj.getInt("pos"),obj.getInt("id"),obj.getString("name"),obj.getString("album"),obj.getString("year"),obj.getString("mp3"),obj.getString("oga"),obj.getString("poster"));
+                    songs.add(song);
+                }
 
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            if (!songs.isEmpty()) {
+                saveSongs();
+            }
+            return compileSongs();
 
         }
 
@@ -89,6 +118,27 @@ public class ArchiveSongs extends SerializableService<Set<Song>>{
             resString = "";
         }
         return resString;
+    }
+
+    private Song[] compileSongs() {
+        if (songs.isEmpty()) {
+            songs.add(new Song(0,0,"Hittade inga låtar",null,null,null,null,null));
+        }
+        ArrayList<Song> songArray = new ArrayList<Song>(songs);
+        Collections.sort(songArray);
+
+        return songArray.toArray(new Song[songArray.size()]);
+    }
+
+    private void saveSongs() {
+        save(songs);
+    }
+
+    private void loadSongs() {
+        songs = load();
+        if (songs == null){
+            songs = Collections.EMPTY_SET;
+        }
     }
 
 }
